@@ -1,0 +1,1539 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>تست ارسال اطلاعات شمارنده‌های ترافیکی - متد Add5</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Tahoma, Arial, sans-serif;
+      font-size: 13px;
+      background: #f0f2f5;
+      color: #333;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #1a5276;
+      margin-bottom: 6px;
+      font-size: 18px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #555;
+      margin-bottom: 20px;
+      font-size: 12px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 18px 22px;
+      margin-bottom: 18px;
+    }
+
+    .card h2 {
+      font-size: 14px;
+      color: #1a5276;
+      border-bottom: 2px solid #1a5276;
+      padding-bottom: 6px;
+      margin-bottom: 14px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 10px 16px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-group label {
+      font-size: 11px;
+      color: #555;
+      margin-bottom: 3px;
+    }
+
+    .form-group label span.latin {
+      font-family: monospace;
+      color: #1a5276;
+      font-weight: bold;
+    }
+
+    .form-group input {
+      padding: 5px 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 12px;
+      direction: ltr;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: #1a5276;
+    }
+
+    .form-group input.nullable {
+      background: #f9f9f9;
+    }
+
+    .hint {
+      font-size: 10px;
+      color: #888;
+      margin-top: 2px;
+    }
+
+    .section-label {
+      grid-column: 1 / -1;
+      font-size: 12px;
+      font-weight: bold;
+      color: #555;
+      background: #ecf0f1;
+      padding: 4px 8px;
+      border-radius: 4px;
+      margin-top: 4px;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    button {
+      padding: 8px 20px;
+      border: none;
+      border-radius: 5px;
+      font-family: Tahoma, Arial, sans-serif;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    #btnSendSoap {
+      background: #1a5276;
+      color: #fff;
+    }
+    #btnSendSoap:hover { background: #154360; }
+
+    #btnSendGet {
+      background: #1e8449;
+      color: #fff;
+    }
+    #btnSendGet:hover { background: #196f3d; }
+
+    #btnReset {
+      background: #aaa;
+      color: #fff;
+    }
+    #btnReset:hover { background: #888; }
+
+    #btnShowSoap {
+      background: #7d3c98;
+      color: #fff;
+    }
+    #btnShowSoap:hover { background: #6c3483; }
+
+    .btn-copy {
+      background: #2e86c1;
+      color: #fff;
+    }
+    .btn-copy:hover { background: #2874a6; }
+
+    #curlBox {
+      background: #0d1117;
+      color: #79c0ff;
+      font-family: monospace;
+      font-size: 11px;
+      padding: 10px 14px;
+      border-radius: 6px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      direction: ltr;
+      margin-top: 8px;
+      border: 1px solid #30363d;
+      display: none;
+    }
+
+    .cors-alert {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin-top: 10px;
+      font-size: 12px;
+      line-height: 1.7;
+      display: none;
+    }
+    .cors-alert strong { color: #856404; }
+
+    .method-note {
+      font-size: 11px;
+      color: #888;
+      margin-top: 4px;
+    }
+
+    #soapPreview, #responseBox {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      font-family: monospace;
+      font-size: 12px;
+      padding: 14px;
+      border-radius: 6px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      direction: ltr;
+      min-height: 80px;
+      max-height: 320px;
+      overflow-y: auto;
+      margin-top: 10px;
+    }
+
+    #responseBox { display: none; }
+
+    .status-badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: bold;
+      margin-right: 8px;
+    }
+    .badge-ok  { background: #d5f5e3; color: #1e8449; }
+    .badge-err { background: #fadbd8; color: #c0392b; }
+    .badge-wait { background: #fef9e7; color: #b7950b; }
+
+    #statusLine { margin-bottom: 6px; min-height: 22px; }
+
+    .resp-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin-top: 10px;
+    }
+    .resp-table th, .resp-table td {
+      border: 1px solid #ddd;
+      padding: 5px 10px;
+      text-align: right;
+    }
+    .resp-table th { background: #eaf2ff; color: #1a5276; }
+    .resp-table tr:nth-child(even) { background: #f9f9f9; }
+
+    #respTableWrap { display: none; }
+
+    a.service-link {
+      color: #1a5276;
+      font-size: 11px;
+      direction: ltr;
+      display: inline-block;
+      margin-top: 4px;
+    }
+
+    /* ── Error D diagnostic card ─────────────────────────────────────── */
+    #errDCard { border-top: 4px solid #c0392b; }
+    .errcode-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+    .errcode-table th, .errcode-table td { border: 1px solid #ddd; padding: 5px 10px; text-align: right; }
+    .errcode-table th { background: #fadbd8; color: #922b21; }
+    .errcode-table td:first-child { font-family: monospace; font-weight: bold; font-size: 13px; color: #c0392b; }
+    .valid-ex { color: #1e8449; font-family: monospace; }
+    .invalid-ex { color: #c0392b; font-family: monospace; }
+
+    /* ── Time validation warning ─────────────────────────────────────── */
+    #timeValidBox {
+      background: #fadbd8;
+      border: 1px solid #f1948a;
+      border-right: 4px solid #c0392b;
+      border-radius: 6px;
+      padding: 8px 14px;
+      font-size: 12px;
+      line-height: 1.8;
+      margin-top: 8px;
+      display: none;
+    }
+    #timeValidBox.valid {
+      background: #eafaf1;
+      border-color: #82e0aa;
+      border-right-color: #1e8449;
+      color: #1e8449;
+    }
+    .time-helper-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .btn-time { background: #eaf2ff; color: #1a5276; border: 1px solid #aed6f1; font-size: 11px; padding: 4px 10px; border-radius: 4px; cursor: pointer; }
+    .btn-time:hover { background: #d6eaf8; }
+
+    /* ── CFL diagnostic card ──────────────────────────────────────── */
+    #cflNoticeCard { border-top: 4px solid #e67e22; }
+    .notice-box {
+      background: #fef9e7;
+      border: 1px solid #f9e79f;
+      border-right: 4px solid #e67e22;
+      border-radius: 6px;
+      padding: 12px 16px;
+      font-size: 12px;
+      line-height: 1.9;
+      margin-bottom: 10px;
+    }
+    .notice-box code { background: #fff; padding: 1px 4px; border-radius: 3px; font-family: monospace; border: 1px solid #ddd; }
+    .fix-box {
+      background: #eafaf1;
+      border: 1px solid #82e0aa;
+      border-right: 4px solid #1e8449;
+      border-radius: 6px;
+      padding: 12px 16px;
+      font-size: 12px;
+      line-height: 1.9;
+      margin-top: 8px;
+    }
+    .fix-box code { background: #fff; padding: 1px 4px; border-radius: 3px; font-family: monospace; border: 1px solid #ccc; }
+    .cfl-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+    .cfl-table th, .cfl-table td { border: 1px solid #ddd; padding: 5px 10px; text-align: right; }
+    .cfl-table th { background: #fef9e7; color: #856404; }
+
+    .btn-soap11 { background: #d5f5e3; color: #1e8449; border: 1px solid #82e0aa; }
+
+    /* ── Login Test card ────────────────────────────────────────────── */
+    #loginCard { border-top: 3px solid #1a5276; }
+
+    .auth-status-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .auth-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: bold;
+      border: 1px solid #ddd;
+      background: #f5f5f5;
+      color: #888;
+      transition: background 0.2s, color 0.2s;
+    }
+    .auth-indicator.ok   { background: #d5f5e3; border-color: #82e0aa; color: #1e8449; }
+    .auth-indicator.err  { background: #fadbd8; border-color: #f1948a; color: #c0392b; }
+    .auth-indicator.wait { background: #fef9e7; border-color: #f9e79f; color: #b7950b; }
+
+    #loginRespBox {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      font-family: monospace;
+      font-size: 11px;
+      padding: 10px 14px;
+      border-radius: 6px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      direction: ltr;
+      max-height: 220px;
+      overflow-y: auto;
+      margin-top: 8px;
+      display: none;
+    }
+
+    #loginCurlBox {
+      background: #0d1117;
+      color: #79c0ff;
+      font-family: monospace;
+      font-size: 11px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      direction: ltr;
+      margin-top: 6px;
+      border: 1px solid #30363d;
+      display: none;
+    }
+
+    .login-note {
+      font-size: 11px;
+      color: #666;
+      margin-bottom: 12px;
+      line-height: 1.6;
+    }
+    .login-note code { background: #eee; padding: 1px 4px; border-radius: 3px; font-family: monospace; }
+  </style>
+</head>
+<body>
+
+<h1>تست ارسال اطلاعات ترددشمار — متد <span style="font-family:monospace">Add5</span></h1>
+<p class="subtitle">
+  راهنما بر اساس مستند «ارسال اطلاعات شمارنده‌های ترددشمار به تفکیک ۵ کلاس سرعت و تخلف» — نسخه ۱.۰۱
+  <br/>
+  <a class="service-link" href="http://otf.rmto.ir/Companies/Companies.asmx?op=Add5" target="_blank">
+    http://otf.rmto.ir/Companies/Companies.asmx?op=Add5
+  </a>
+</p>
+
+<!-- ===== ERROR D DIAGNOSTIC CARD ===== -->
+<div class="card" id="errDCard">
+  <h2>🕐 راهنمای خطای «D» — خطای بازه زمانی (پیام پشتیبانی RMTO)</h2>
+
+  <div class="notice-box" style="border-right-color:#c0392b;background:#fff5f5;border-color:#f1948a;">
+    <strong>📩 خلاصه پیام پشتیبانی RMTO درباره خطای D:</strong><br/>
+    مدت زمان بازه ارسالی باید دقیقاً <strong>۵، ۱۰ یا ۱۵ دقیقه</strong> باشد (قراردادهای جدید: فقط ۵ دقیقه)
+    و از <strong>رأس ساعت</strong> شروع شده باشد. ثانیه شروع و پایان باید <strong>صفر</strong> باشد.
+    بسته زمانی نباید از بازه‌های ساعت عبور کند.
+  </div>
+
+  <h3 style="font-size:13px;margin:12px 0 6px;color:#922b21;">قوانین اجباری برای ST و ET:</h3>
+  <table class="errcode-table">
+    <thead><tr><th>قانون</th><th>توضیح</th><th>مثال نادرست ❌</th><th>مثال درست ✅</th></tr></thead>
+    <tbody>
+      <tr>
+        <td style="color:#333;font-family:inherit;font-weight:normal;">مدت بازه</td>
+        <td>فقط ۵، ۱۰ یا ۱۵ دقیقه مجاز است</td>
+        <td class="invalid-ex">10:00 → 10:20 (20 دقیقه)</td>
+        <td class="valid-ex">10:00 → 10:15 (15 دقیقه)</td>
+      </tr>
+      <tr>
+        <td style="color:#333;font-family:inherit;font-weight:normal;">هم‌راستایی</td>
+        <td>شروع باید مضربی از مدت بازه از رأس ساعت باشد</td>
+        <td class="invalid-ex">10:01 → 10:06</td>
+        <td class="valid-ex">10:00 → 10:05</td>
+      </tr>
+      <tr>
+        <td style="color:#333;font-family:inherit;font-weight:normal;">ثانیه صفر</td>
+        <td>ثانیه‌های ST و ET باید 00 باشند</td>
+        <td class="invalid-ex">10:00:03 → 10:05:03</td>
+        <td class="valid-ex">10:00:00 → 10:05:00</td>
+      </tr>
+      <tr>
+        <td style="color:#333;font-family:inherit;font-weight:normal;">داخل یک ساعت</td>
+        <td>بازه نباید از مرز ساعت عبور کند</td>
+        <td class="invalid-ex">7:55 → 8:10</td>
+        <td class="valid-ex">7:50 → 8:00 و 8:00 → 8:10</td>
+      </tr>
+      <tr>
+        <td style="color:#333;font-family:inherit;font-weight:normal;">آینده نباشد</td>
+        <td>ST نباید از زمان سرور جلوتر باشد</td>
+        <td class="invalid-ex">فردا ساعت 10:00</td>
+        <td class="valid-ex">دیروز یا گذشته</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3 style="font-size:13px;margin:14px 0 6px;color:#922b21;">کدهای خطای ERR در پاسخ سرور:</h3>
+  <table class="errcode-table">
+    <thead><tr><th>کد خطا</th><th>معنی</th><th>عملکرد</th></tr></thead>
+    <tbody>
+      <tr><td>D</td><td>خطای بازه زمانی — مدت یا هم‌راستایی اشتباه / آینده</td><td>رکورد حذف می‌شود، هزینه‌ای تعلق نمی‌گیرد</td></tr>
+      <tr><td>O</td><td>تعداد تخلف/سرعت/فاصله بیش از کل وسایل نقلیه</td><td>رکورد ثبت می‌شود اما اشکال دارد</td></tr>
+      <tr><td>S</td><td>سرعت بیش از حداکثر مجاز محور</td><td>رکورد ثبت می‌شود اما اشکال دارد</td></tr>
+      <tr><td>5S</td><td>اختلاف سرعت میانگین با میانگین وزنی ۵ کلاس &gt; ۵ کم/ساعت</td><td>رکورد ثبت می‌شود اما اشکال دارد</td></tr>
+      <tr><td>F</td><td>حجم عبوری بیش از ظرفیت محور</td><td>رکورد ثبت می‌شود اما اشکال دارد</td></tr>
+      <tr><td>R</td><td>مشخصات محور ثبت نشده (RID ناشناخته)</td><td>بعد از ثبت RID، رکوردهای قبلی مجاز می‌شوند</td></tr>
+      <tr><td>OLD</td><td>داده‌های قدیمی‌تر از ۱ ماه (فقط محورهای اصلی)</td><td>برای محورهای تست: محدودیت تاریخ ندارد</td></tr>
+      <tr><td>A</td><td>دسترسی قطع شده توسط ادمین/مرکز</td><td>تماس با اداره کل استان پس از رفع مشکل</td></tr>
+      <tr><td>Exception</td><td>خطای استثنا — رکورد ذخیره نشده</td><td>یکبار دیگر ارسال کنید؛ اگر تکرار شد بسته را بفرستید</td></tr>
+      <tr><td>Conflict 1-6</td><td>تناقض در داده — شرح مشکل ارائه می‌شود</td><td>داده ثبت نمی‌شود؛ یکبار دیگر ارسال کنید</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ===== CFL ERROR DIAGNOSTIC CARD ===== -->
+<div class="card" id="cflNoticeCard">
+  <h2>⚠️ رفع خطا: پیام پشتیبانی RMTO — «خطا در CFL / زمان سرور برنمی‌گردد»</h2>
+  <div class="notice-box">
+    <strong>📩 پیام دریافت‌شده از پشتیبانی RMTO:</strong><br/>
+    «مشکل از نوع متغیر و داده‌های ارسالیتون هست. که خطا در <code>CFL</code> می‌گیرید. و زمان سرور رو بهتون بر نمی‌گردونه.»
+  </div>
+
+  <div class="fix-box">
+    <strong>✅ علت شناسایی‌شده و راه‌حل اعمال‌شده:</strong><br/>
+    ۱. <strong>هدر <code>action</code> در SOAP 1.2</strong> — در WSDL مشخص شده که عملیات <code>Add5</code> باید با
+    <code>soapAction="ITS/Add5"</code> فراخوانی شود. برای SOAP 1.2 این مقدار باید در هدر
+    <code>Content-Type</code> گنجانده شود:<br/>
+    &nbsp;&nbsp;&nbsp;<code>Content-Type: application/soap+xml; charset=utf-8; action="ITS/Add5"</code><br/>
+    بدون این مقدار، سرور متد را اشتباه تشخیص می‌دهد و <code>CFL</code> خطا برمی‌گردد.<br/><br/>
+    ۲. <strong>گزینه SOAP 1.1</strong> — نرم‌افزار C# اصلی از
+    <code>BasicHttpBinding</code> (SOAP 1.1) استفاده می‌کند که نیاز به هدر جداگانه
+    <code>SOAPAction: "ITS/Add5"</code> دارد. دستور curl برای این روش در فرم پایین قابل کپی است.
+  </div>
+
+  <h3 style="margin-top:14px;font-size:13px;color:#856404;">معنی مقادیر فیلد <code>CFL</code> در پاسخ:</h3>
+  <table class="cfl-table">
+    <thead><tr><th>مقدار CFL</th><th>معنی</th><th>عملکرد برنامه C#</th></tr></thead>
+    <tbody>
+      <tr><td><strong>0</strong></td><td>بدون تناقض — ثبت موفق</td><td>RMTO_ID = ID برگشتی (مثبت)</td></tr>
+      <tr><td><strong>100</strong></td><td>داده تکراری — قبلاً ثبت شده</td><td>به عنوان موفق تلقی می‌شود</td></tr>
+      <tr><td>هر مقدار دیگر</td><td>خطا در نوع داده یا مقادیر ارسالی</td><td>RMTO_ID = 6735 (کد خطای داخلی)</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:11px;color:#666;margin-top:8px;line-height:1.7;">
+    اگر <code>SRVDT</code> برنگردد یا مقدار آن قبل از ۲۰۱۰ باشد، یعنی رکورد در پایگاه داده سرور ذخیره نشده است.
+    رفع خطا: هدر Content-Type را با <code>action="ITS/Add5"</code> تنظیم کنید یا از روش SOAP 1.1 استفاده کنید.
+  </p>
+</div>
+
+<!-- ===== LOGIN TEST CARD ===== -->
+<div class="card" id="loginCard">
+  <h2>🔐 تست اتصال و احراز هویت</h2>
+  <p class="login-note">
+    با کلیک روی دکمه، یک درخواست <code>Add5</code> با داده‌های آزمایشی (صفر) ارسال می‌شود تا
+    وضعیت اتصال به سرور و درستی اعتبار ورود بررسی گردد.
+  </p>
+  <div class="form-grid" style="grid-template-columns:repeat(auto-fill,minmax(190px,1fr));">
+    <div class="form-group">
+      <label><span class="latin">CID</span> — شناسه شرکت</label>
+      <input type="number" id="lCID" min="0" max="65535" value="80" />
+    </div>
+    <div class="form-group">
+      <label><span class="latin">UID</span> — نام کاربری</label>
+      <input type="text" id="lUID" value="USERNAME" />
+    </div>
+    <div class="form-group">
+      <label><span class="latin">PWD</span> — رمز عبور</label>
+      <input type="password" id="lPWD" value="PASSWORD" />
+    </div>
+  </div>
+  <div class="btn-row">
+    <button type="button" id="btnLoginTest" style="background:#1a5276;color:#fff;">🔐 تست اتصال و احراز هویت</button>
+    <button type="button" id="btnLoginCopyCurl" class="btn-copy" style="font-size:12px;padding:5px 14px;">📋 کپی curl</button>
+    <span id="loginCopyConfirm" style="color:#1e8449;font-size:11px;display:none;">✔ کپی شد!</span>
+  </div>
+  <div class="auth-status-row" id="loginStatusRow" style="display:none;">
+    <span class="auth-indicator" id="indConnect">🌐 اتصال: —</span>
+    <span class="auth-indicator" id="indAuth">🔑 احراز هویت: —</span>
+    <span class="auth-indicator" id="indErr">⚙️ ERR: —</span>
+  </div>
+  <div class="cors-alert" id="loginCorsAlert"></div>
+  <pre id="loginCurlBox"></pre>
+  <pre id="loginRespBox"></pre>
+</div>
+
+<!-- ===== FORM ===== -->
+<form id="add5Form" autocomplete="off">
+
+  <div class="card">
+    <h2>اطلاعات احراز هویت و شناسه‌ها</h2>
+    <div class="form-grid">
+
+      <div class="form-group">
+        <label><span class="latin">CID</span> — شناسه شرکت (Company ID)</label>
+        <input type="number" id="CID" min="0" max="65535" value="80" required />
+      </div>
+
+      <div class="form-group">
+        <label><span class="latin">UID</span> — نام کاربری (User ID)</label>
+        <input type="text" id="UID" value="USERNAME" required />
+      </div>
+
+      <div class="form-group">
+        <label><span class="latin">PWD</span> — رمز عبور (Password)</label>
+        <input type="password" id="PWD" value="PASSWORD" required />
+      </div>
+
+      <div class="form-group">
+        <label><span class="latin">FID</span> — شناسه رکورد ارسالی (First ID)</label>
+        <input type="number" id="FID" min="0" value="0" required />
+      </div>
+
+      <div class="form-group">
+        <label><span class="latin">RID</span> — شناسه محور (Road ID)</label>
+        <input type="number" id="RID" min="0" value="102030" required />
+      </div>
+
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>بازه زمانی</h2>
+    <div class="form-grid">
+
+      <div class="form-group">
+        <label><span class="latin">ST</span> — تاریخ و زمان شروع (Start DateTime)</label>
+        <input type="datetime-local" id="ST" value="2009-02-24T13:00" step="300" required />
+      </div>
+
+      <div class="form-group">
+        <label><span class="latin">ET</span> — تاریخ و زمان پایان (End DateTime)</label>
+        <input type="datetime-local" id="ET" value="2009-02-24T13:05" step="300" required />
+      </div>
+
+    </div>
+
+    <div class="time-helper-row">
+      <button type="button" class="btn-time" id="btnTime5">⏱ تنظیم بازه ۵ دقیقه (اخیر)</button>
+      <button type="button" class="btn-time" id="btnTime10">⏱ تنظیم بازه ۱۰ دقیقه (اخیر)</button>
+      <button type="button" class="btn-time" id="btnTime15">⏱ تنظیم بازه ۱۵ دقیقه (اخیر)</button>
+    </div>
+    <div id="timeValidBox"></div>
+
+  </div>
+
+  <div class="card">
+    <h2>تعداد تردد به تفکیک کلاس (C1–C5)</h2>
+    <div class="form-grid">
+
+      <div class="form-group">
+        <label><span class="latin">C1</span> — سواری و وانت (Class 1 Flow)</label>
+        <input type="number" id="C1" min="0" max="65535" value="500" class="nullable" />
+        <span class="hint">اختیاری — خالی بگذارید تا null ارسال شود</span>
+      </div>
+
+      <div class="form-group">
+        <label><span class="latin">C2</span> — کامیونت و مینی‌بوس (Class 2 Flow)</label>
+        <input type="number" id="C2" min="0" max="65535" value="50" class="nullable" />
+        <span class="hint">اختیاری</span>
+      </div>
+
+      <div class="form-group">
+        <label><span class="latin">C3</span> — کامیون دو محور (Class 3 Flow)</label>
+        <input type="number" id="C3" min="0" max="65535" value="0" class="nullable" />
+        <span class="hint">اختیاری</span>
+      </div>
+
+      <div class="form-group">
+        <label><span class="latin">C4</span> — اتوبوس (Class 4 Flow)</label>
+        <input type="number" id="C4" min="0" max="65535" value="10" class="nullable" />
+        <span class="hint">اختیاری</span>
+      </div>
+
+      <div class="form-group">
+        <label><span class="latin">C5</span> — کامیون سه محور به بالا (Class 5 Flow)</label>
+        <input type="number" id="C5" min="0" max="65535" value="5" class="nullable" />
+        <span class="hint">اختیاری</span>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>سرعت متوسط (ASP، S1–S5)</h2>
+    <div class="form-grid">
+
+      <div class="form-group">
+        <label><span class="latin">ASP</span> — سرعت متوسط کل (Average Speed)</label>
+        <input type="number" id="ASP" min="0" max="65535" value="78" class="nullable" />
+        <span class="hint">اختیاری</span>
+      </div>
+
+      <div class="form-group">
+        <label><span class="latin">S1</span> — سرعت متوسط سواری و وانت</label>
+        <input type="number" id="S1" min="0" max="65535" value="80" class="nullable" />
+        <span class="hint">اختیاری</span>
+      </div>
+
+      <div class="form-group">
+        <label><span class="latin">S2</span> — سرعت متوسط کامیونت و مینی‌بوس</label>
+        <input type="number" id="S2" min="0" max="65535" value="70" class="nullable" />
+        <span class="hint">اختیاری</span>
+      </div>
+
+      <div class="form-group">
+        <label><span class="latin">S3</span> — سرعت متوسط کامیون دو محور</label>
+        <input type="number" id="S3" min="0" max="65535" value="0" class="nullable" />
+        <span class="hint">اختیاری</span>
+      </div>
+
+      <div class="form-group">
+        <label><span class="latin">S4</span> — سرعت متوسط اتوبوس</label>
+        <input type="number" id="S4" min="0" max="65535" value="50" class="nullable" />
+        <span class="hint">اختیاری</span>
+      </div>
+
+      <div class="form-group">
+        <label><span class="latin">S5</span> — سرعت متوسط کامیون سه محور به بالا</label>
+        <input type="number" id="S5" min="0" max="65535" value="40" class="nullable" />
+        <span class="hint">اختیاری</span>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>تخلف سرعت (SSO، SO1–SO5)</h2>
+    <div class="form-grid">
+
+      <div class="form-group">
+        <label><span class="latin">SSO</span> — تعداد کل تخلف سرعت غیرمجاز (Sum Speeding Offence)</label>
+        <input type="number" id="SSO" min="0" max="65535" value="50" class="nullable" />
+        <span class="hint">اختیاری</span>
+      </div>
+
+      <div class="form-group">
+        <label><span class="latin">SO1</span> — تخلف سرعت سواری و وانت</label>
+        <input type="number" id="SO1" min="0" max="65535" value="25" class="nullable" />
+        <span class="hint">اختیاری</span>
+      </div>
+
+      <div class="form-group">
+        <label><span class="latin">SO2</span> — تخلف سرعت کامیونت و مینی‌بوس</label>
+        <input type="number" id="SO2" min="0" max="65535" value="13" class="nullable" />
+        <span class="hint">اختیاری</span>
+      </div>
+
+      <div class="form-group">
+        <label><span class="latin">SO3</span> — تخلف سرعت کامیون دو محور</label>
+        <input type="number" id="SO3" min="0" max="65535" value="7" class="nullable" />
+        <span class="hint">اختیاری</span>
+      </div>
+
+      <div class="form-group">
+        <label><span class="latin">SO4</span> — تخلف سرعت اتوبوس</label>
+        <input type="number" id="SO4" min="0" max="65535" value="5" class="nullable" />
+        <span class="hint">اختیاری</span>
+      </div>
+
+      <div class="form-group">
+        <label><span class="latin">SO5</span> — تخلف سرعت کامیون سه محور به بالا</label>
+        <input type="number" id="SO5" min="0" max="65535" value="" class="nullable" />
+        <span class="hint">اختیاری — خالی = null (مطابق مثال PDF)</span>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>سایر تخلفات</h2>
+    <div class="form-grid">
+
+      <div class="form-group">
+        <label><span class="latin">OO</span> — تعداد سبقت غیرمجاز (Overtaking Offence)</label>
+        <input type="number" id="OO" min="0" max="65535" value="7" class="nullable" />
+        <span class="hint">اختیاری</span>
+      </div>
+
+      <div class="form-group">
+        <label><span class="latin">ESD</span> — تعداد فاصله غیرمجاز (Exceeding Safe Distance)</label>
+        <input type="number" id="ESD" min="0" max="65535" value="7" class="nullable" />
+        <span class="hint">اختیاری</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Buttons -->
+  <div class="btn-row">
+    <button type="button" id="btnSendSoap">📤 ارسال با SOAP 1.2 (Add5)</button>
+    <button type="button" id="btnSendGet">🌐 ارسال با HTTP GET (Add5PG)</button>
+    <button type="button" id="btnShowSoap">🔍 پیش‌نمایش SOAP 1.2</button>
+    <button type="button" id="btnShowSoap11" class="btn-soap11">📋 کپی curl SOAP 1.1</button>
+    <button type="button" id="btnReset">↩ بازنشانی فرم</button>
+  </div>
+  <p class="method-note">
+    <strong>SOAP 1.2 (Add5):</strong> از پروتکل SOAP 1.2 با هدر
+    <code>Content-Type: application/soap+xml; charset=utf-8; action="ITS/Add5"</code> استفاده می‌کند.<br/>
+    <strong>SOAP 1.1 (curl):</strong> روشی که نرم‌افزار C# اصلی از آن استفاده می‌کند — هدر
+    <code>SOAPAction: "ITS/Add5"</code> و <code>Content-Type: text/xml</code>.
+    دکمه «کپی curl SOAP 1.1» دستور را در کلیپ‌بورد می‌گذارد.<br/>
+    <strong>HTTP GET (Add5PG):</strong> داده را به صورت پارامتر URL ارسال می‌کند؛
+    مقدار <code>null</code> با <code>-1</code> جایگزین می‌شود.
+  </p>
+
+</form>
+
+<!-- ===== SOAP Preview ===== -->
+<div class="card" id="soapCard" style="display:none;">
+  <h2>بسته SOAP ارسالی (پیش‌نمایش)</h2>
+  <div style="display:flex;gap:8px;margin-bottom:6px;flex-wrap:wrap;align-items:center;">
+    <button type="button" id="btnCopyCurl" class="btn-copy" style="font-size:12px;padding:5px 14px;">📋 کپی دستور curl</button>
+    <button type="button" id="btnOpenGet" style="background:#1e8449;color:#fff;font-size:12px;padding:5px 14px;" class="btn-copy">🔗 باز کردن در مرورگر (GET)</button>
+    <span id="copyConfirm" style="color:#1e8449;font-size:11px;display:none;">✔ کپی شد!</span>
+  </div>
+  <pre id="soapPreview"></pre>
+  <pre id="curlBox"></pre>
+</div>
+
+<!-- ===== Response ===== -->
+<div class="card" id="respCard" style="display:none;">
+  <h2>پاسخ سرویس</h2>
+  <div id="statusLine"></div>
+  <div class="cors-alert" id="corsAlert"></div>
+  <div id="respTableWrap">
+    <table class="resp-table">
+      <thead>
+        <tr>
+          <th>فیلد</th>
+          <th>نام کامل</th>
+          <th>مقدار</th>
+        </tr>
+      </thead>
+      <tbody id="respTbody"></tbody>
+    </table>
+  </div>
+  <pre id="responseBox"></pre>
+</div>
+
+<script>
+  /* ------------------------------------------------------------------ */
+  /* Helpers                                                              */
+  /* ------------------------------------------------------------------ */
+
+  const SERVICE_URL = 'http://otf.rmto.ir/Companies/Companies.asmx';
+
+  // Store last-built values so error handler and copy buttons can reference them
+  let _lastSoapBody = '';
+  let _lastGetUrl   = '';
+
+  /** Return the string value of an input, or null if empty */
+  function val(id) {
+    const v = document.getElementById(id).value.trim();
+    return v === '' ? null : v;
+  }
+
+  /** Format a datetime-local value to ISO 8601 (SOAP) */
+  function toIso(dtLocal) {
+    if (!dtLocal) return null;
+    // datetime-local gives "YYYY-MM-DDTHH:mm" — append :00 seconds if missing
+    return dtLocal.length === 16 ? dtLocal + ':00' : dtLocal;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Time window validation (Error D rules from RMTO)                    */
+  /* Returns array of Farsi error strings; empty = valid                 */
+  /* ------------------------------------------------------------------ */
+  function validateTimeWindow(stIso, etIso) {
+    const errors = [];
+    if (!stIso || !etIso) { errors.push('ST یا ET خالی است.'); return errors; }
+
+    const st = new Date(stIso);
+    const et = new Date(etIso);
+    if (isNaN(st) || isNaN(et)) { errors.push('قالب تاریخ/زمان نادرست است.'); return errors; }
+
+    const diffMs  = et - st;
+    const diffMin = diffMs / 60000;
+
+    // 1. Duration must be 5, 10, or 15 minutes
+    if (diffMin !== 5 && diffMin !== 10 && diffMin !== 15) {
+      errors.push(`مدت بازه ${diffMin} دقیقه است — فقط ۵، ۱۰ یا ۱۵ دقیقه مجاز است.`);
+    }
+
+    // 2. Seconds of ST and ET must be 0
+    if (st.getSeconds() !== 0) errors.push(`ثانیه ST باید ۰۰ باشد (مقدار فعلی: ${st.getSeconds()}).`);
+    if (et.getSeconds() !== 0) errors.push(`ثانیه ET باید ۰۰ باشد (مقدار فعلی: ${et.getSeconds()}).`);
+
+    // 3. Alignment: ST.minute must be a multiple of diffMin (from top of hour)
+    if (diffMin === 5 || diffMin === 10 || diffMin === 15) {
+      if (st.getMinutes() % diffMin !== 0) {
+        errors.push(`شروع بازه باید مضرب ${diffMin} از رأس ساعت باشد (دقیقه ST = ${st.getMinutes()}).`);
+      }
+    }
+
+    // 4. Must not span across an hour boundary
+    if (st.getHours() !== et.getHours() && et.getMinutes() !== 0) {
+      errors.push('بازه از مرز ساعت عبور می‌کند — ST و ET باید در یک ساعت باشند (یا ET دقیقاً رأس ساعت باشد).');
+    }
+
+    // 5. ST must not be in the future (relative to now)
+    if (st > new Date()) {
+      errors.push('ST از زمان حال جلوتر است — سرور داده آینده را رد می‌کند (خطای D).');
+    }
+
+    return errors;
+  }
+
+  /** Update the inline validation indicator near the time card */
+  function updateTimeValid() {
+    const stIso = toIso(val('ST'));
+    const etIso = toIso(val('ET'));
+    const box = document.getElementById('timeValidBox');
+    if (!stIso || !etIso) { box.style.display = 'none'; return; }
+    const errs = validateTimeWindow(stIso, etIso);
+    if (errs.length === 0) {
+      box.className = 'valid';
+      box.style.display = '';
+      box.innerHTML = '✅ بازه زمانی معتبر است.';
+    } else {
+      box.className = '';
+      box.style.display = '';
+      box.innerHTML = '❌ <strong>هشدار بازه زمانی (خطای احتمالی D):</strong><br/>' +
+        errs.map(e => '• ' + escXml(e)).join('<br/>');
+    }
+  }
+
+  document.getElementById('ST').addEventListener('change', updateTimeValid);
+  document.getElementById('ET').addEventListener('change', updateTimeValid);
+
+  /* ------------------------------------------------------------------ */
+  /* Time helper buttons — snap to valid aligned window                  */
+  /* ------------------------------------------------------------------ */
+  function snapToWindow(durationMin) {
+    // Find the most recent completed window of durationMin ending now
+    const now   = new Date();
+    const etMin = Math.floor(now.getMinutes() / durationMin) * durationMin;
+    const et    = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), etMin, 0, 0);
+    const st    = new Date(et.getTime() - durationMin * 60000);
+    const pad2  = n => String(n).padStart(2, '0');
+    const fmt   = d => d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate()) +
+                       'T' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+    document.getElementById('ST').value = fmt(st);
+    document.getElementById('ET').value = fmt(et);
+    updateTimeValid();
+  }
+
+  document.getElementById('btnTime5').addEventListener('click',  () => snapToWindow(5));
+  document.getElementById('btnTime10').addEventListener('click', () => snapToWindow(10));
+  document.getElementById('btnTime15').addEventListener('click', () => snapToWindow(15));
+
+  /** Build a single SOAP element; if value is null returns xsi:nil="true" */
+  function soapEl(tag, value) {
+    if (value === null) {
+      return `<${tag} xsi:nil="true"/>`;
+    }
+    return `<${tag}>${escXml(String(value))}</${tag}>`;
+  }
+
+  function escXml(s) {
+    return s.replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Build curl command equivalent of a SOAP call                        */
+  /* ------------------------------------------------------------------ */
+  function buildCurlCommand(soapBody) {
+    // Escape single quotes for shell
+    const escaped = soapBody.replace(/'/g, "'\\''");
+    return `curl -X POST "${SERVICE_URL}" \\
+  -H "Content-Type: application/soap+xml; charset=utf-8; action=\\"ITS/Add5\\"" \\
+  -d '${escaped}'`;
+  }
+
+  /** Build curl command using SOAP 1.1 envelope — uses SOAPAction header (no CORS issue with curl) */
+  function buildCurlSoap11(soapBody11) {
+    const escaped = soapBody11.replace(/'/g, "'\\''");
+    return `curl -X POST "${SERVICE_URL}" \\
+  -H "Content-Type: text/xml; charset=utf-8" \\
+  -H "SOAPAction: \\"ITS/Add5\\"" \\
+  -d '${escaped}'`;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Clipboard helper                                                     */
+  /* ------------------------------------------------------------------ */
+  function copyText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+    } else {
+      fallbackCopy(text);
+    }
+  }
+  function fallbackCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Read form values                                                     */
+  /* ------------------------------------------------------------------ */
+  function readFields() {
+    return {
+      CID:  val('CID'),
+      UID:  val('UID'),
+      PWD:  val('PWD'),
+      FID:  val('FID'),
+      RID:  val('RID'),
+      ST:   toIso(val('ST')),
+      ET:   toIso(val('ET')),
+      C1:   val('C1'),
+      C2:   val('C2'),
+      C3:   val('C3'),
+      C4:   val('C4'),
+      C5:   val('C5'),
+      ASP:  val('ASP'),
+      S1:   val('S1'),
+      S2:   val('S2'),
+      S3:   val('S3'),
+      S4:   val('S4'),
+      S5:   val('S5'),
+      SSO:  val('SSO'),
+      SO1:  val('SO1'),
+      SO2:  val('SO2'),
+      SO3:  val('SO3'),
+      SO4:  val('SO4'),
+      SO5:  val('SO5'),
+      OO:   val('OO'),
+      ESD:  val('ESD'),
+    };
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Build SOAP 1.2 envelope                                             */
+  /* ------------------------------------------------------------------ */
+  function buildSoap(f) {
+    return `<?xml version="1.0" encoding="utf-8"?>
+<soap12:Envelope
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+  xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
+  <soap12:Body>
+    <Add5 xmlns="ITS">
+      ${soapEl('CID',  f.CID)}
+      ${soapEl('UID',  f.UID)}
+      ${soapEl('PWD',  f.PWD)}
+      ${soapEl('FID',  f.FID)}
+      ${soapEl('RID',  f.RID)}
+      ${soapEl('ST',   f.ST)}
+      ${soapEl('ET',   f.ET)}
+      ${soapEl('C1',   f.C1)}
+      ${soapEl('C2',   f.C2)}
+      ${soapEl('C3',   f.C3)}
+      ${soapEl('C4',   f.C4)}
+      ${soapEl('C5',   f.C5)}
+      ${soapEl('ASP',  f.ASP)}
+      ${soapEl('S1',   f.S1)}
+      ${soapEl('S2',   f.S2)}
+      ${soapEl('S3',   f.S3)}
+      ${soapEl('S4',   f.S4)}
+      ${soapEl('S5',   f.S5)}
+      ${soapEl('SSO',  f.SSO)}
+      ${soapEl('SO1',  f.SO1)}
+      ${soapEl('SO2',  f.SO2)}
+      ${soapEl('SO3',  f.SO3)}
+      ${soapEl('SO4',  f.SO4)}
+      ${soapEl('SO5',  f.SO5)}
+      ${soapEl('OO',   f.OO)}
+      ${soapEl('ESD',  f.ESD)}
+    </Add5>
+  </soap12:Body>
+</soap12:Envelope>`;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Build SOAP 1.1 envelope (used by the original C# app / curl only)  */
+  /* Header required: SOAPAction: "ITS/Add5"                            */
+  /* ------------------------------------------------------------------ */
+  function buildSoap11(f) {
+    return `<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+  xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Body>
+    <Add5 xmlns="ITS">
+      ${soapEl('CID',  f.CID)}
+      ${soapEl('UID',  f.UID)}
+      ${soapEl('PWD',  f.PWD)}
+      ${soapEl('FID',  f.FID)}
+      ${soapEl('RID',  f.RID)}
+      ${soapEl('ST',   f.ST)}
+      ${soapEl('ET',   f.ET)}
+      ${soapEl('C1',   f.C1)}
+      ${soapEl('C2',   f.C2)}
+      ${soapEl('C3',   f.C3)}
+      ${soapEl('C4',   f.C4)}
+      ${soapEl('C5',   f.C5)}
+      ${soapEl('ASP',  f.ASP)}
+      ${soapEl('S1',   f.S1)}
+      ${soapEl('S2',   f.S2)}
+      ${soapEl('S3',   f.S3)}
+      ${soapEl('S4',   f.S4)}
+      ${soapEl('S5',   f.S5)}
+      ${soapEl('SSO',  f.SSO)}
+      ${soapEl('SO1',  f.SO1)}
+      ${soapEl('SO2',  f.SO2)}
+      ${soapEl('SO3',  f.SO3)}
+      ${soapEl('SO4',  f.SO4)}
+      ${soapEl('SO5',  f.SO5)}
+      ${soapEl('OO',   f.OO)}
+      ${soapEl('ESD',  f.ESD)}
+    </Add5>
+  </soap:Body>
+</soap:Envelope>`;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Build GET URL for Add5PG                                            */
+  /* -1 substitutes null (as per documentation)                          */
+  /* ------------------------------------------------------------------ */
+  function buildGetUrl(f) {
+    const p = new URLSearchParams();
+    const nullable = v => (v === null ? '-1' : v);
+    p.set('CID', f.CID ?? '0');
+    p.set('UID', f.UID ?? '');
+    p.set('PWD', f.PWD ?? '');
+    p.set('FID', f.FID ?? '0');
+    p.set('RID', f.RID ?? '0');
+    p.set('ST',  f.ST  ?? '');
+    p.set('ET',  f.ET  ?? '');
+    p.set('C1',  nullable(f.C1));
+    p.set('C2',  nullable(f.C2));
+    p.set('C3',  nullable(f.C3));
+    p.set('C4',  nullable(f.C4));
+    p.set('C5',  nullable(f.C5));
+    p.set('ASP', nullable(f.ASP));
+    p.set('S1',  nullable(f.S1));
+    p.set('S2',  nullable(f.S2));
+    p.set('S3',  nullable(f.S3));
+    p.set('S4',  nullable(f.S4));
+    p.set('S5',  nullable(f.S5));
+    p.set('SSO', nullable(f.SSO));
+    p.set('SO1', nullable(f.SO1));
+    p.set('SO2', nullable(f.SO2));
+    p.set('SO3', nullable(f.SO3));
+    p.set('SO4', nullable(f.SO4));
+    p.set('SO5', nullable(f.SO5));
+    p.set('OO',  nullable(f.OO));
+    p.set('ESD', nullable(f.ESD));
+    return SERVICE_URL + '/Add5PG?' + p.toString();
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Response field metadata                                              */
+  /* ------------------------------------------------------------------ */
+  const RESP_FIELDS = [
+    { key: 'ID',    label: 'شناسه اصلی رکورد ثبت‌شده در پایگاه داده مرکز' },
+    { key: 'FID',   label: 'شناسه اولیه ارسالی' },
+    { key: 'CFL',   label: 'وجود تناقض یا اشکال در اطلاعات (Conflict)' },
+    { key: 'SRVDT', label: 'زمان ثبت رکورد روی سرور (Server DateTime)' },
+    { key: 'DLY',   label: 'میزان تأخیر (Delay Time)' },
+    { key: 'BIL',   label: 'مقیاس محاسبه کارکرد (Bill Scale)' },
+    { key: 'ERR',   label: 'کد خطا (Error Code)' },
+  ];
+
+  /** Return a human-readable CFL interpretation */
+  function cflNote(val) {
+    if (val === '0') return ' ✅ (بدون تناقض)';
+    if (val === '100') return ' ⚠️ (رکورد تکراری — قبلاً ثبت شده)';
+    return ' ❌ (خطا در نوع متغیر یا مقادیر ارسالی — رکورد ذخیره نشد)';
+  }
+
+  /** Return a human-readable ERR code explanation */
+  const ERR_CODES = {
+    'D':         '❌ خطای بازه زمانی — مدت یا هم‌راستایی اشتباه، یا زمان آینده (رکورد حذف می‌شود)',
+    'O':         '⚠️ تعداد تخلف/سرعت/فاصله بیش از کل وسایل نقلیه',
+    'S':         '⚠️ سرعت بیش از حداکثر مجاز محور',
+    '5S':        '⚠️ اختلاف سرعت میانگین با میانگین وزنی ۵ کلاس > ۵ کیلومتر/ساعت',
+    'F':         '⚠️ حجم عبوری بیش از ظرفیت محور',
+    'R':         '⚠️ مشخصات محور ثبت نشده (RID ناشناخته)',
+    'OLD':       '⚠️ داده‌های قدیمی‌تر از ۱ ماه (فقط محورهای اصلی)',
+    'A':         '❌ دسترسی قطع شده توسط ادمین/مرکز',
+    '0':         '✅ بدون خطا',
+  };
+  function errNote(val) {
+    if (!val || val === '(null)' || val === '—') return '';
+    const trimmed = val.trim();
+    const upper   = trimmed.toUpperCase();
+    // Check exact match (original case first, then uppercase)
+    if (ERR_CODES[trimmed]) return ' — ' + ERR_CODES[trimmed];
+    if (ERR_CODES[upper])   return ' — ' + ERR_CODES[upper];
+    // Conflict/Exception patterns
+    if (/^conflict/i.test(trimmed)) return ' — ❌ تناقض در داده (Conflict) — رکورد ثبت نشد؛ یکبار دیگر ارسال کنید';
+    if (/^exception/i.test(trimmed)) return ' — ❌ خطای استثنا (Exception) — رکورد ذخیره نشد؛ دوباره ارسال کنید';
+    return '';
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Parse XML response and populate table                               */
+  /* ------------------------------------------------------------------ */
+  function parseAndShowResponse(xmlText, httpStatus) {
+    document.getElementById('respCard').style.display = '';
+    const statusLine = document.getElementById('statusLine');
+
+    let badge, badgeClass;
+    if (httpStatus >= 200 && httpStatus < 300) {
+      badge = '✅ موفق'; badgeClass = 'badge-ok';
+    } else {
+      badge = '❌ خطا'; badgeClass = 'badge-err';
+    }
+    statusLine.innerHTML =
+      `<span class="status-badge ${badgeClass}">${badge}</span>HTTP ${httpStatus}`;
+
+    // Show raw XML
+    const rawBox = document.getElementById('responseBox');
+    rawBox.style.display = '';
+    rawBox.textContent = xmlText;
+
+    // Try to parse and fill table
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(xmlText, 'text/xml');
+      const result = doc.querySelector('Add5Result') ||
+                     doc.querySelector('Re') ||
+                     doc.querySelector('[localName="Add5Result"]');
+
+      if (result) {
+        const tbody = document.getElementById('respTbody');
+        tbody.innerHTML = '';
+        RESP_FIELDS.forEach(({ key, label }) => {
+          const el = result.querySelector(key);
+          const rawVal = el
+            ? (el.getAttribute('xsi:nil') === 'true' ? '(null)' : el.textContent)
+            : '—';
+          let displayVal, rowStyle;
+          if (key === 'CFL') {
+            displayVal = escXml(rawVal) + cflNote(rawVal);
+            rowStyle = (rawVal !== '0' && rawVal !== '—') ? ' style="background:#fff3cd;"' : '';
+          } else if (key === 'ERR') {
+            const note = errNote(rawVal);
+            displayVal = escXml(rawVal) + escXml(note);
+            // Highlight ERR row if it contains an error code
+            const isErrPresent = rawVal && rawVal !== '(null)' && rawVal !== '—' && rawVal !== '0';
+            rowStyle = isErrPresent ? ' style="background:#fadbd8;"' : '';
+          } else {
+            displayVal = escXml(rawVal);
+            rowStyle = '';
+          }
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td${rowStyle}><strong>${escXml(key)}</strong></td><td${rowStyle}>${escXml(label)}</td><td dir="ltr"${rowStyle}>${displayVal}</td>`;
+          tbody.appendChild(tr);
+        });
+
+        // Update status line with semantic info about the response
+        const idEl = result.querySelector('ID');
+        const cflEl = result.querySelector('CFL');
+        const srvEl = result.querySelector('SRVDT');
+        if (idEl && cflEl) {
+          const idVal = idEl.textContent.trim();
+          const cflVal = cflEl.textContent.trim();
+          const srvVal = srvEl ? srvEl.textContent.trim() : '';
+          const idOk = parseInt(idVal, 10) > 0 || cflVal === '100';
+          statusLine.innerHTML =
+            `<span class="status-badge ${idOk ? 'badge-ok' : 'badge-err'}">${idOk ? '✅ ثبت موفق' : '❌ ثبت ناموفق — CFL=' + escXml(cflVal)}</span>` +
+            `HTTP ${httpStatus}` +
+            (srvVal ? ` — سرور: <strong>${escXml(srvVal)}</strong>` : ' — <em>SRVDT دریافت نشد</em>');
+        }
+
+        document.getElementById('respTableWrap').style.display = '';
+      }
+    } catch (_) { /* silently ignore parse errors */ }
+  }
+
+  function showNetworkError(err, type) {
+    document.getElementById('respCard').style.display = '';
+    document.getElementById('statusLine').innerHTML =
+      `<span class="status-badge badge-err">❌ خطای شبکه (CORS)</span>`;
+    document.getElementById('respTableWrap').style.display = 'none';
+
+    // Show CORS explanation box
+    const alert = document.getElementById('corsAlert');
+    alert.style.display = '';
+    if (type === 'soap') {
+      alert.innerHTML =
+        '<strong>⚠️ علت خطا:</strong> مرورگر به دلیل سیاست CORS اجازه ارسال درخواست SOAP مستقیم به سرور را نمی‌دهد.<br/><br/>' +
+        '<strong>✅ راه‌حل:</strong> دستور <code>curl</code> زیر را کپی کرده و در <strong>ترمینال / Command Prompt</strong> اجرا کنید. دکمه «📋 کپی دستور curl» هم همین کار را می‌کند.';
+      // Show curl command in dedicated box
+      const curlBox = document.getElementById('curlBox');
+      curlBox.textContent = buildCurlCommand(_lastSoapBody);
+      curlBox.style.display = '';
+    } else {
+      alert.innerHTML =
+        '<strong>⚠️ علت خطا:</strong> مرورگر به دلیل سیاست CORS اجازه ارسال درخواست GET مستقیم را نمی‌دهد.<br/><br/>' +
+        '<strong>✅ راه‌حل ۱:</strong> دکمه «🔗 باز کردن در مرورگر (GET)» را بزنید تا پاسخ XML مستقیماً در تب جدید مرورگر نمایش داده شود.<br/>' +
+        '<strong>✅ راه‌حل ۲:</strong> این آدرس را مستقیم در نوار آدرس مرورگر وارد کنید:<br/>' +
+        '<a href="' + _lastGetUrl + '" target="_blank" dir="ltr" style="word-break:break-all;font-family:monospace;font-size:11px;">' + _lastGetUrl + '</a><br/><br/>' +
+        '<strong>✅ راه‌حل ۳ (curl):</strong> <code>curl "' + _lastGetUrl + '"</code>';
+    }
+
+    // Also show raw error detail
+    const rawBox = document.getElementById('responseBox');
+    rawBox.style.display = '';
+    rawBox.textContent = 'جزئیات خطا: ' + err.message;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Send SOAP                                                            */
+  /* ------------------------------------------------------------------ */
+  document.getElementById('btnSendSoap').addEventListener('click', async () => {
+    const f = readFields();
+
+    // Run time validation and update indicator
+    updateTimeValid();
+
+    const soapBody = buildSoap(f);
+    _lastSoapBody = soapBody;
+
+    // Show preview + curl
+    document.getElementById('soapCard').style.display = '';
+    document.getElementById('soapPreview').textContent = soapBody;
+    const curlBox = document.getElementById('curlBox');
+    curlBox.textContent = buildCurlCommand(soapBody);
+    curlBox.style.display = '';
+
+    document.getElementById('respCard').style.display = '';
+    document.getElementById('statusLine').innerHTML =
+      `<span class="status-badge badge-wait">⏳ در حال ارسال…</span>`;
+    document.getElementById('responseBox').style.display = '';
+    document.getElementById('responseBox').textContent = '';
+    document.getElementById('respTableWrap').style.display = 'none';
+    document.getElementById('corsAlert').style.display = 'none';
+
+    try {
+      const resp = await fetch(SERVICE_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/soap+xml; charset=utf-8; action="ITS/Add5"',
+        },
+        body: soapBody,
+      });
+      const text = await resp.text();
+      parseAndShowResponse(text, resp.status);
+    } catch (err) {
+      showNetworkError(err, 'soap');
+    }
+  });
+
+  /* ------------------------------------------------------------------ */
+  /* Send GET (Add5PG)                                                   */
+  /* ------------------------------------------------------------------ */
+  document.getElementById('btnSendGet').addEventListener('click', async () => {
+    const f = readFields();
+    const url = buildGetUrl(f);
+    _lastGetUrl = url;
+
+    document.getElementById('soapCard').style.display = '';
+    document.getElementById('soapPreview').textContent = 'GET ' + url;
+    document.getElementById('curlBox').textContent = 'curl "' + url + '"';
+    document.getElementById('curlBox').style.display = '';
+
+    document.getElementById('respCard').style.display = '';
+    document.getElementById('statusLine').innerHTML =
+      `<span class="status-badge badge-wait">⏳ در حال ارسال…</span>`;
+    document.getElementById('responseBox').style.display = '';
+    document.getElementById('responseBox').textContent = '';
+    document.getElementById('respTableWrap').style.display = 'none';
+    document.getElementById('corsAlert').style.display = 'none';
+
+    try {
+      const resp = await fetch(url);
+      const text = await resp.text();
+      parseAndShowResponse(text, resp.status);
+    } catch (err) {
+      showNetworkError(err, 'get');
+    }
+  });
+
+  /* ------------------------------------------------------------------ */
+  /* Show SOAP preview only                                               */
+  /* ------------------------------------------------------------------ */
+  document.getElementById('btnShowSoap').addEventListener('click', () => {
+    const f = readFields();
+    const soapBody = buildSoap(f);
+    _lastSoapBody = soapBody;
+    document.getElementById('soapCard').style.display = '';
+    document.getElementById('soapPreview').textContent = soapBody;
+    const curlBox = document.getElementById('curlBox');
+    curlBox.textContent = buildCurlCommand(soapBody);
+    curlBox.style.display = '';
+  });
+
+  /* ------------------------------------------------------------------ */
+  /* SOAP 1.1 curl copy — recommended method matching original C# app    */
+  /* ------------------------------------------------------------------ */
+  document.getElementById('btnShowSoap11').addEventListener('click', () => {
+    const f = readFields();
+    const soap11Body = buildSoap11(f);
+    const curlCmd = buildCurlSoap11(soap11Body);
+    copyText(curlCmd);
+    // Show preview in the soap preview card too
+    document.getElementById('soapCard').style.display = '';
+    document.getElementById('soapPreview').textContent = soap11Body;
+    const curlBox = document.getElementById('curlBox');
+    curlBox.textContent = curlCmd;
+    curlBox.style.display = '';
+    // Visual feedback on the button
+    const btn = document.getElementById('btnShowSoap11');
+    const origText = btn.textContent;
+    btn.textContent = '✔ کپی شد!';
+    setTimeout(() => { btn.textContent = origText; }, 2000);
+  });
+
+  /* ------------------------------------------------------------------ */
+  /* Copy curl command                                                    */
+  /* ------------------------------------------------------------------ */
+  document.getElementById('btnCopyCurl').addEventListener('click', () => {
+    const preview = document.getElementById('soapPreview').textContent;
+    const text = preview.startsWith('GET ')
+      ? 'curl "' + _lastGetUrl + '"'
+      : buildCurlCommand(_lastSoapBody);
+    copyText(text);
+    const confirm = document.getElementById('copyConfirm');
+    confirm.style.display = '';
+    setTimeout(() => { confirm.style.display = 'none'; }, 2500);
+  });
+
+  /* ------------------------------------------------------------------ */
+  /* Open GET URL directly in new browser tab (bypasses CORS)            */
+  /* ------------------------------------------------------------------ */
+  document.getElementById('btnOpenGet').addEventListener('click', () => {
+    const url = _lastGetUrl || buildGetUrl(readFields());
+    _lastGetUrl = url;
+    window.open(url, '_blank');
+  });
+
+  /* ------------------------------------------------------------------ */
+  /* Login Test                                                          */
+  /* ------------------------------------------------------------------ */
+
+  /** Build a minimal SOAP envelope for login/auth testing */
+  function buildLoginTestSoap(cid, uid, pwd) {
+    const now  = new Date();
+    const pad2 = n => String(n).padStart(2, '0');
+    const fmt  = d =>
+      d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) +
+      'T' + pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':00';
+    // Use the most recent completed 5-minute window (aligned to top of hour)
+    const etMin = Math.floor(now.getMinutes() / 5) * 5;
+    const etAligned = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), etMin, 0, 0);
+    const stAligned = new Date(etAligned.getTime() - 300000);
+    const st = fmt(stAligned);
+    const et = fmt(etAligned);
+    return `<?xml version="1.0" encoding="utf-8"?>
+<soap12:Envelope
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+  xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
+  <soap12:Body>
+    <Add5 xmlns="ITS">
+      ${soapEl('CID', cid)}
+      ${soapEl('UID', uid)}
+      ${soapEl('PWD', pwd)}
+      ${soapEl('FID', '0')}
+      ${soapEl('RID', '0')}
+      ${soapEl('ST',  st)}
+      ${soapEl('ET',  et)}
+      ${soapEl('C1',  '0')}
+      ${soapEl('C2',  '0')}
+      ${soapEl('C3',  '0')}
+      ${soapEl('C4',  '0')}
+      ${soapEl('C5',  '0')}
+      ${soapEl('ASP', '0')}
+      ${soapEl('S1',  '0')}
+      ${soapEl('S2',  '0')}
+      ${soapEl('S3',  '0')}
+      ${soapEl('S4',  '0')}
+      ${soapEl('S5',  '0')}
+      ${soapEl('SSO', '0')}
+      ${soapEl('SO1', '0')}
+      ${soapEl('SO2', '0')}
+      ${soapEl('SO3', '0')}
+      ${soapEl('SO4', '0')}
+      ${soapEl('SO5', '0')}
+      ${soapEl('OO',  '0')}
+      ${soapEl('ESD', '0')}
+    </Add5>
+  </soap12:Body>
+</soap12:Envelope>`;
+  }
+
+  function setIndicator(id, state, text) {
+    const el = document.getElementById(id);
+    el.className = 'auth-indicator ' + state;
+    el.textContent = text;
+  }
+
+  document.getElementById('btnLoginTest').addEventListener('click', async () => {
+    const cid = document.getElementById('lCID').value.trim() || '0';
+    const uid = document.getElementById('lUID').value.trim() || '';
+    const pwd = document.getElementById('lPWD').value.trim() || '';
+    const soapBody = buildLoginTestSoap(cid, uid, pwd);
+
+    // Show curl command
+    document.getElementById('loginCurlBox').textContent = buildCurlCommand(soapBody);
+    document.getElementById('loginCurlBox').style.display = '';
+
+    // Reset status indicators
+    document.getElementById('loginStatusRow').style.display = '';
+    setIndicator('indConnect', 'wait', '🌐 اتصال: در حال بررسی…');
+    setIndicator('indAuth',    'wait', '🔑 احراز هویت: در انتظار…');
+    setIndicator('indErr',     '',     '⚙️ ERR: —');
+    document.getElementById('loginCorsAlert').style.display = 'none';
+    document.getElementById('loginRespBox').style.display = 'none';
+
+    try {
+      const resp = await fetch(SERVICE_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/soap+xml; charset=utf-8; action="ITS/Add5"' },
+        body: soapBody,
+      });
+      const xmlText = await resp.text();
+
+      setIndicator('indConnect', 'ok', '🌐 اتصال: ✅ برقرار');
+
+      // Parse response to extract ERR and SRVDT
+      try {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(xmlText, 'text/xml');
+        const result = doc.querySelector('Add5Result') || doc.querySelector('Re');
+        if (result) {
+          const errEl  = result.querySelector('ERR');
+          const srvEl  = result.querySelector('SRVDT');
+          const errVal = errEl
+            ? (errEl.getAttribute('xsi:nil') === 'true' ? 'null' : errEl.textContent.trim())
+            : null;
+          const srvVal = srvEl ? srvEl.textContent.trim() : '';
+
+          if (errVal === '0' || errVal === null) {
+            setIndicator('indAuth', 'ok',  '🔑 احراز هویت: ✅ معتبر');
+          } else {
+            setIndicator('indAuth', 'err', '🔑 احراز هویت: ❌ نام کاربری یا رمز اشتباه');
+          }
+          setIndicator('indErr', errVal === '0' ? 'ok' : 'err', `⚙️ ERR: ${errVal ?? '—'}`);
+          if (srvVal) {
+            setIndicator('indConnect', 'ok', `🌐 اتصال: ✅ برقرار — سرور: ${srvVal}`);
+          }
+        } else {
+          setIndicator('indAuth', 'wait', '🔑 احراز هویت: پاسخ قابل تفسیر نیست');
+        }
+      } catch (_) {
+        setIndicator('indAuth', 'wait', '🔑 احراز هویت: خطا در تفسیر XML');
+      }
+
+      const rawBox = document.getElementById('loginRespBox');
+      rawBox.textContent = xmlText;
+      rawBox.style.display = '';
+    } catch (err) {
+      setIndicator('indConnect', 'err', '🌐 اتصال: ❌ خطای شبکه');
+      setIndicator('indAuth',    '',    '🔑 احراز هویت: —');
+      setIndicator('indErr',     '',    '⚙️ ERR: —');
+
+      const alertBox = document.getElementById('loginCorsAlert');
+      alertBox.style.display = '';
+      alertBox.innerHTML =
+        '<strong>⚠️ علت خطا (CORS):</strong> مرورگر اجازه درخواست مستقیم به سرور را نمی‌دهد.<br/>' +
+        '<strong>✅ راه‌حل:</strong> دستور <code>curl</code> بالا را در <strong>ترمینال</strong> اجرا کنید.';
+
+      document.getElementById('loginRespBox').textContent = 'جزئیات خطا: ' + err.message;
+      document.getElementById('loginRespBox').style.display = '';
+    }
+  });
+
+  document.getElementById('btnLoginCopyCurl').addEventListener('click', () => {
+    const cid = document.getElementById('lCID').value.trim() || '0';
+    const uid = document.getElementById('lUID').value.trim() || '';
+    const pwd = document.getElementById('lPWD').value.trim() || '';
+    copyText(buildCurlCommand(buildLoginTestSoap(cid, uid, pwd)));
+    const confirm = document.getElementById('loginCopyConfirm');
+    confirm.style.display = '';
+    setTimeout(() => { confirm.style.display = 'none'; }, 2500);
+  });
+
+  /* ------------------------------------------------------------------ */
+  /* Reset form                                                           */
+  /* ------------------------------------------------------------------ */
+  document.getElementById('btnReset').addEventListener('click', () => {
+    document.getElementById('add5Form').reset();
+    document.getElementById('soapCard').style.display = 'none';
+    document.getElementById('respCard').style.display = 'none';
+    document.getElementById('respTableWrap').style.display = 'none';
+    document.getElementById('responseBox').style.display = 'none';
+    document.getElementById('corsAlert').style.display = 'none';
+    document.getElementById('curlBox').style.display = 'none';
+    _lastSoapBody = '';
+    _lastGetUrl   = '';
+  });
+</script>
+
+</body>
+</html>
