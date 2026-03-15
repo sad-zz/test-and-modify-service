@@ -237,6 +237,72 @@
       display: inline-block;
       margin-top: 4px;
     }
+
+    /* ── Login Test card ────────────────────────────────────────────── */
+    #loginCard { border-top: 3px solid #1a5276; }
+
+    .auth-status-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .auth-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: bold;
+      border: 1px solid #ddd;
+      background: #f5f5f5;
+      color: #888;
+      transition: background 0.2s, color 0.2s;
+    }
+    .auth-indicator.ok   { background: #d5f5e3; border-color: #82e0aa; color: #1e8449; }
+    .auth-indicator.err  { background: #fadbd8; border-color: #f1948a; color: #c0392b; }
+    .auth-indicator.wait { background: #fef9e7; border-color: #f9e79f; color: #b7950b; }
+
+    #loginRespBox {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      font-family: monospace;
+      font-size: 11px;
+      padding: 10px 14px;
+      border-radius: 6px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      direction: ltr;
+      max-height: 220px;
+      overflow-y: auto;
+      margin-top: 8px;
+      display: none;
+    }
+
+    #loginCurlBox {
+      background: #0d1117;
+      color: #79c0ff;
+      font-family: monospace;
+      font-size: 11px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      direction: ltr;
+      margin-top: 6px;
+      border: 1px solid #30363d;
+      display: none;
+    }
+
+    .login-note {
+      font-size: 11px;
+      color: #666;
+      margin-bottom: 12px;
+      line-height: 1.6;
+    }
+    .login-note code { background: #eee; padding: 1px 4px; border-radius: 3px; font-family: monospace; }
   </style>
 </head>
 <body>
@@ -249,6 +315,42 @@
     http://otf.rmto.ir/Companies/Companies.asmx?op=Add5
   </a>
 </p>
+
+<!-- ===== LOGIN TEST CARD ===== -->
+<div class="card" id="loginCard">
+  <h2>🔐 تست اتصال و احراز هویت</h2>
+  <p class="login-note">
+    با کلیک روی دکمه، یک درخواست <code>Add5</code> با داده‌های آزمایشی (صفر) ارسال می‌شود تا
+    وضعیت اتصال به سرور و درستی اعتبار ورود بررسی گردد.
+  </p>
+  <div class="form-grid" style="grid-template-columns:repeat(auto-fill,minmax(190px,1fr));">
+    <div class="form-group">
+      <label><span class="latin">CID</span> — شناسه شرکت</label>
+      <input type="number" id="lCID" min="0" max="65535" value="80" />
+    </div>
+    <div class="form-group">
+      <label><span class="latin">UID</span> — نام کاربری</label>
+      <input type="text" id="lUID" value="USERNAME" />
+    </div>
+    <div class="form-group">
+      <label><span class="latin">PWD</span> — رمز عبور</label>
+      <input type="password" id="lPWD" value="PASSWORD" />
+    </div>
+  </div>
+  <div class="btn-row">
+    <button type="button" id="btnLoginTest" style="background:#1a5276;color:#fff;">🔐 تست اتصال و احراز هویت</button>
+    <button type="button" id="btnLoginCopyCurl" class="btn-copy" style="font-size:12px;padding:5px 14px;">📋 کپی curl</button>
+    <span id="loginCopyConfirm" style="color:#1e8449;font-size:11px;display:none;">✔ کپی شد!</span>
+  </div>
+  <div class="auth-status-row" id="loginStatusRow" style="display:none;">
+    <span class="auth-indicator" id="indConnect">🌐 اتصال: —</span>
+    <span class="auth-indicator" id="indAuth">🔑 احراز هویت: —</span>
+    <span class="auth-indicator" id="indErr">⚙️ ERR: —</span>
+  </div>
+  <div class="cors-alert" id="loginCorsAlert"></div>
+  <pre id="loginCurlBox"></pre>
+  <pre id="loginRespBox"></pre>
+</div>
 
 <!-- ===== FORM ===== -->
 <form id="add5Form" autocomplete="off">
@@ -869,6 +971,149 @@
     const url = _lastGetUrl || buildGetUrl(readFields());
     _lastGetUrl = url;
     window.open(url, '_blank');
+  });
+
+  /* ------------------------------------------------------------------ */
+  /* Login Test                                                          */
+  /* ------------------------------------------------------------------ */
+
+  /** Build a minimal SOAP envelope for login/auth testing */
+  function buildLoginTestSoap(cid, uid, pwd) {
+    const now = new Date();
+    const pad2 = n => String(n).padStart(2, '0');
+    const fmt = d =>
+      d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) +
+      'T' + pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':00';
+    const st = fmt(now);
+    const et = fmt(new Date(now.getTime() + 3600000));
+    return `<?xml version="1.0" encoding="utf-8"?>
+<soap12:Envelope
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+  xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
+  <soap12:Body>
+    <Add5 xmlns="ITS">
+      ${soapEl('CID', cid)}
+      ${soapEl('UID', uid)}
+      ${soapEl('PWD', pwd)}
+      ${soapEl('FID', '0')}
+      ${soapEl('RID', '0')}
+      ${soapEl('ST',  st)}
+      ${soapEl('ET',  et)}
+      ${soapEl('C1',  '0')}
+      ${soapEl('C2',  '0')}
+      ${soapEl('C3',  '0')}
+      ${soapEl('C4',  '0')}
+      ${soapEl('C5',  '0')}
+      ${soapEl('ASP', '0')}
+      ${soapEl('S1',  '0')}
+      ${soapEl('S2',  '0')}
+      ${soapEl('S3',  '0')}
+      ${soapEl('S4',  '0')}
+      ${soapEl('S5',  '0')}
+      ${soapEl('SSO', '0')}
+      ${soapEl('SO1', '0')}
+      ${soapEl('SO2', '0')}
+      ${soapEl('SO3', '0')}
+      ${soapEl('SO4', '0')}
+      ${soapEl('SO5', '0')}
+      ${soapEl('OO',  '0')}
+      ${soapEl('ESD', '0')}
+    </Add5>
+  </soap12:Body>
+</soap12:Envelope>`;
+  }
+
+  function setIndicator(id, state, text) {
+    const el = document.getElementById(id);
+    el.className = 'auth-indicator ' + state;
+    el.textContent = text;
+  }
+
+  document.getElementById('btnLoginTest').addEventListener('click', async () => {
+    const cid = document.getElementById('lCID').value.trim() || '0';
+    const uid = document.getElementById('lUID').value.trim() || '';
+    const pwd = document.getElementById('lPWD').value.trim() || '';
+    const soapBody = buildLoginTestSoap(cid, uid, pwd);
+
+    // Show curl command
+    document.getElementById('loginCurlBox').textContent = buildCurlCommand(soapBody);
+    document.getElementById('loginCurlBox').style.display = '';
+
+    // Reset status indicators
+    document.getElementById('loginStatusRow').style.display = '';
+    setIndicator('indConnect', 'wait', '🌐 اتصال: در حال بررسی…');
+    setIndicator('indAuth',    'wait', '🔑 احراز هویت: در انتظار…');
+    setIndicator('indErr',     '',     '⚙️ ERR: —');
+    document.getElementById('loginCorsAlert').style.display = 'none';
+    document.getElementById('loginRespBox').style.display = 'none';
+
+    try {
+      const resp = await fetch(SERVICE_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/soap+xml; charset=utf-8' },
+        body: soapBody,
+      });
+      const xmlText = await resp.text();
+
+      setIndicator('indConnect', 'ok', '🌐 اتصال: ✅ برقرار');
+
+      // Parse response to extract ERR and SRVDT
+      try {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(xmlText, 'text/xml');
+        const result = doc.querySelector('Add5Result') || doc.querySelector('Re');
+        if (result) {
+          const errEl  = result.querySelector('ERR');
+          const srvEl  = result.querySelector('SRVDT');
+          const errVal = errEl
+            ? (errEl.getAttribute('xsi:nil') === 'true' ? 'null' : errEl.textContent.trim())
+            : null;
+          const srvVal = srvEl ? srvEl.textContent.trim() : '';
+
+          if (errVal === '0' || errVal === null) {
+            setIndicator('indAuth', 'ok',  '🔑 احراز هویت: ✅ معتبر');
+          } else {
+            setIndicator('indAuth', 'err', '🔑 احراز هویت: ❌ نام کاربری یا رمز اشتباه');
+          }
+          setIndicator('indErr', errVal === '0' ? 'ok' : 'err', `⚙️ ERR: ${errVal ?? '—'}`);
+          if (srvVal) {
+            setIndicator('indConnect', 'ok', `🌐 اتصال: ✅ برقرار — سرور: ${srvVal}`);
+          }
+        } else {
+          setIndicator('indAuth', 'wait', '🔑 احراز هویت: پاسخ قابل تفسیر نیست');
+        }
+      } catch (_) {
+        setIndicator('indAuth', 'wait', '🔑 احراز هویت: خطا در تفسیر XML');
+      }
+
+      const rawBox = document.getElementById('loginRespBox');
+      rawBox.textContent = xmlText;
+      rawBox.style.display = '';
+    } catch (err) {
+      setIndicator('indConnect', 'err', '🌐 اتصال: ❌ خطای شبکه');
+      setIndicator('indAuth',    '',    '🔑 احراز هویت: —');
+      setIndicator('indErr',     '',    '⚙️ ERR: —');
+
+      const alertBox = document.getElementById('loginCorsAlert');
+      alertBox.style.display = '';
+      alertBox.innerHTML =
+        '<strong>⚠️ علت خطا (CORS):</strong> مرورگر اجازه درخواست مستقیم به سرور را نمی‌دهد.<br/>' +
+        '<strong>✅ راه‌حل:</strong> دستور <code>curl</code> بالا را در <strong>ترمینال</strong> اجرا کنید.';
+
+      document.getElementById('loginRespBox').textContent = 'جزئیات خطا: ' + err.message;
+      document.getElementById('loginRespBox').style.display = '';
+    }
+  });
+
+  document.getElementById('btnLoginCopyCurl').addEventListener('click', () => {
+    const cid = document.getElementById('lCID').value.trim() || '0';
+    const uid = document.getElementById('lUID').value.trim() || '';
+    const pwd = document.getElementById('lPWD').value.trim() || '';
+    copyText(buildCurlCommand(buildLoginTestSoap(cid, uid, pwd)));
+    const confirm = document.getElementById('loginCopyConfirm');
+    confirm.style.display = '';
+    setTimeout(() => { confirm.style.display = 'none'; }, 2500);
   });
 
   /* ------------------------------------------------------------------ */
