@@ -143,6 +143,39 @@
     }
     #btnShowSoap:hover { background: #6c3483; }
 
+    .btn-copy {
+      background: #2e86c1;
+      color: #fff;
+    }
+    .btn-copy:hover { background: #2874a6; }
+
+    #curlBox {
+      background: #0d1117;
+      color: #79c0ff;
+      font-family: monospace;
+      font-size: 11px;
+      padding: 10px 14px;
+      border-radius: 6px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      direction: ltr;
+      margin-top: 8px;
+      border: 1px solid #30363d;
+      display: none;
+    }
+
+    .cors-alert {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin-top: 10px;
+      font-size: 12px;
+      line-height: 1.7;
+      display: none;
+    }
+    .cors-alert strong { color: #856404; }
+
     .method-note {
       font-size: 11px;
       color: #888;
@@ -431,13 +464,20 @@
 <!-- ===== SOAP Preview ===== -->
 <div class="card" id="soapCard" style="display:none;">
   <h2>بسته SOAP ارسالی (پیش‌نمایش)</h2>
+  <div style="display:flex;gap:8px;margin-bottom:6px;flex-wrap:wrap;align-items:center;">
+    <button type="button" id="btnCopyCurl" class="btn-copy" style="font-size:12px;padding:5px 14px;">📋 کپی دستور curl</button>
+    <button type="button" id="btnOpenGet" style="background:#1e8449;color:#fff;font-size:12px;padding:5px 14px;" class="btn-copy">🔗 باز کردن در مرورگر (GET)</button>
+    <span id="copyConfirm" style="color:#1e8449;font-size:11px;display:none;">✔ کپی شد!</span>
+  </div>
   <pre id="soapPreview"></pre>
+  <pre id="curlBox"></pre>
 </div>
 
 <!-- ===== Response ===== -->
 <div class="card" id="respCard" style="display:none;">
   <h2>پاسخ سرویس</h2>
   <div id="statusLine"></div>
+  <div class="cors-alert" id="corsAlert"></div>
   <div id="respTableWrap">
     <table class="resp-table">
       <thead>
@@ -459,6 +499,10 @@
   /* ------------------------------------------------------------------ */
 
   const SERVICE_URL = 'http://otf.rmto.ir/Companies/Companies.asmx';
+
+  // Store last-built values so error handler and copy buttons can reference them
+  let _lastSoapBody = '';
+  let _lastGetUrl   = '';
 
   /** Return the string value of an input, or null if empty */
   function val(id) {
@@ -486,6 +530,37 @@
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;');
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Build curl command equivalent of a SOAP call                        */
+  /* ------------------------------------------------------------------ */
+  function buildCurlCommand(soapBody) {
+    // Escape single quotes for shell
+    const escaped = soapBody.replace(/'/g, "'\\''");
+    return `curl -X POST "${SERVICE_URL}" \\
+  -H "Content-Type: application/soap+xml; charset=utf-8" \\
+  -d '${escaped}'`;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Clipboard helper                                                     */
+  /* ------------------------------------------------------------------ */
+  function copyText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+    } else {
+      fallbackCopy(text);
+    }
+  }
+  function fallbackCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
   }
 
   /* ------------------------------------------------------------------ */
@@ -659,18 +734,36 @@
     } catch (_) { /* silently ignore parse errors */ }
   }
 
-  function showNetworkError(err) {
+  function showNetworkError(err, type) {
     document.getElementById('respCard').style.display = '';
     document.getElementById('statusLine').innerHTML =
-      `<span class="status-badge badge-err">❌ خطای شبکه</span>`;
+      `<span class="status-badge badge-err">❌ خطای شبکه (CORS)</span>`;
+    document.getElementById('respTableWrap').style.display = 'none';
+
+    // Show CORS explanation box
+    const alert = document.getElementById('corsAlert');
+    alert.style.display = '';
+    if (type === 'soap') {
+      alert.innerHTML =
+        '<strong>⚠️ علت خطا:</strong> مرورگر به دلیل سیاست CORS اجازه ارسال درخواست SOAP مستقیم به سرور را نمی‌دهد.<br/><br/>' +
+        '<strong>✅ راه‌حل:</strong> دستور <code>curl</code> زیر را کپی کرده و در <strong>ترمینال / Command Prompt</strong> اجرا کنید. دکمه «📋 کپی دستور curl» هم همین کار را می‌کند.';
+      // Show curl command in dedicated box
+      const curlBox = document.getElementById('curlBox');
+      curlBox.textContent = buildCurlCommand(_lastSoapBody);
+      curlBox.style.display = '';
+    } else {
+      alert.innerHTML =
+        '<strong>⚠️ علت خطا:</strong> مرورگر به دلیل سیاست CORS اجازه ارسال درخواست GET مستقیم را نمی‌دهد.<br/><br/>' +
+        '<strong>✅ راه‌حل ۱:</strong> دکمه «🔗 باز کردن در مرورگر (GET)» را بزنید تا پاسخ XML مستقیماً در تب جدید مرورگر نمایش داده شود.<br/>' +
+        '<strong>✅ راه‌حل ۲:</strong> این آدرس را مستقیم در نوار آدرس مرورگر وارد کنید:<br/>' +
+        '<a href="' + _lastGetUrl + '" target="_blank" dir="ltr" style="word-break:break-all;font-family:monospace;font-size:11px;">' + _lastGetUrl + '</a><br/><br/>' +
+        '<strong>✅ راه‌حل ۳ (curl):</strong> <code>curl "' + _lastGetUrl + '"</code>';
+    }
+
+    // Also show raw error detail
     const rawBox = document.getElementById('responseBox');
     rawBox.style.display = '';
-    rawBox.textContent =
-      'خطا در ارتباط با سرویس:\n' + err.message + '\n\n' +
-      'توجه: ممکن است سرور سرویس از دسترس خارج باشد، یا مرورگر\n' +
-      'به دلیل سیاست CORS درخواست را رد کرده باشد.\n' +
-      'در صورت بروز خطای CORS، آدرس GET را که نمایش داده شده\n' +
-      'مستقیماً در مرورگر باز کنید یا از ابزار curl/Postman استفاده کنید.';
+    rawBox.textContent = 'جزئیات خطا: ' + err.message;
   }
 
   /* ------------------------------------------------------------------ */
@@ -679,10 +772,14 @@
   document.getElementById('btnSendSoap').addEventListener('click', async () => {
     const f = readFields();
     const soapBody = buildSoap(f);
+    _lastSoapBody = soapBody;
 
-    // Show preview
+    // Show preview + curl
     document.getElementById('soapCard').style.display = '';
     document.getElementById('soapPreview').textContent = soapBody;
+    const curlBox = document.getElementById('curlBox');
+    curlBox.textContent = buildCurlCommand(soapBody);
+    curlBox.style.display = '';
 
     document.getElementById('respCard').style.display = '';
     document.getElementById('statusLine').innerHTML =
@@ -690,6 +787,7 @@
     document.getElementById('responseBox').style.display = '';
     document.getElementById('responseBox').textContent = '';
     document.getElementById('respTableWrap').style.display = 'none';
+    document.getElementById('corsAlert').style.display = 'none';
 
     try {
       const resp = await fetch(SERVICE_URL, {
@@ -702,7 +800,7 @@
       const text = await resp.text();
       parseAndShowResponse(text, resp.status);
     } catch (err) {
-      showNetworkError(err);
+      showNetworkError(err, 'soap');
     }
   });
 
@@ -712,9 +810,12 @@
   document.getElementById('btnSendGet').addEventListener('click', async () => {
     const f = readFields();
     const url = buildGetUrl(f);
+    _lastGetUrl = url;
 
     document.getElementById('soapCard').style.display = '';
     document.getElementById('soapPreview').textContent = 'GET ' + url;
+    document.getElementById('curlBox').textContent = 'curl "' + url + '"';
+    document.getElementById('curlBox').style.display = '';
 
     document.getElementById('respCard').style.display = '';
     document.getElementById('statusLine').innerHTML =
@@ -722,16 +823,14 @@
     document.getElementById('responseBox').style.display = '';
     document.getElementById('responseBox').textContent = '';
     document.getElementById('respTableWrap').style.display = 'none';
+    document.getElementById('corsAlert').style.display = 'none';
 
     try {
       const resp = await fetch(url);
       const text = await resp.text();
       parseAndShowResponse(text, resp.status);
     } catch (err) {
-      showNetworkError(err);
-      // Also display the full URL so the user can try it in browser
-      document.getElementById('responseBox').textContent +=
-        '\n\nآدرس کامل GET:\n' + url;
+      showNetworkError(err, 'get');
     }
   });
 
@@ -741,8 +840,35 @@
   document.getElementById('btnShowSoap').addEventListener('click', () => {
     const f = readFields();
     const soapBody = buildSoap(f);
+    _lastSoapBody = soapBody;
     document.getElementById('soapCard').style.display = '';
     document.getElementById('soapPreview').textContent = soapBody;
+    const curlBox = document.getElementById('curlBox');
+    curlBox.textContent = buildCurlCommand(soapBody);
+    curlBox.style.display = '';
+  });
+
+  /* ------------------------------------------------------------------ */
+  /* Copy curl command                                                    */
+  /* ------------------------------------------------------------------ */
+  document.getElementById('btnCopyCurl').addEventListener('click', () => {
+    const preview = document.getElementById('soapPreview').textContent;
+    const text = preview.startsWith('GET ')
+      ? 'curl "' + _lastGetUrl + '"'
+      : buildCurlCommand(_lastSoapBody);
+    copyText(text);
+    const confirm = document.getElementById('copyConfirm');
+    confirm.style.display = '';
+    setTimeout(() => { confirm.style.display = 'none'; }, 2500);
+  });
+
+  /* ------------------------------------------------------------------ */
+  /* Open GET URL directly in new browser tab (bypasses CORS)            */
+  /* ------------------------------------------------------------------ */
+  document.getElementById('btnOpenGet').addEventListener('click', () => {
+    const url = _lastGetUrl || buildGetUrl(readFields());
+    _lastGetUrl = url;
+    window.open(url, '_blank');
   });
 
   /* ------------------------------------------------------------------ */
@@ -754,6 +880,10 @@
     document.getElementById('respCard').style.display = 'none';
     document.getElementById('respTableWrap').style.display = 'none';
     document.getElementById('responseBox').style.display = 'none';
+    document.getElementById('corsAlert').style.display = 'none';
+    document.getElementById('curlBox').style.display = 'none';
+    _lastSoapBody = '';
+    _lastGetUrl   = '';
   });
 </script>
 
