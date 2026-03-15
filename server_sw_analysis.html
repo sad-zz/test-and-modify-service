@@ -816,7 +816,7 @@ function fallbackCopy(text) {
 
 function buildCurlCommand(soapBody) {
   const escaped = soapBody.replace(/'/g, "'\\''");
-  return `curl -X POST "${SERVICE_URL}" \\\n  -H "Content-Type: application/soap+xml; charset=utf-8" \\\n  -d '${escaped}'`;
+  return `curl -X POST "${SERVICE_URL}" \\\n  -H "Content-Type: application/soap+xml; charset=utf-8; action=\\"ITS/Add5\\"" \\\n  -d '${escaped}'`;
 }
 
 /* ------------------------------------------------------------------ */
@@ -851,7 +851,7 @@ document.getElementById('btnTestSend').addEventListener('click', async () => {
   try {
     const resp = await fetch(SERVICE_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/soap+xml; charset=utf-8' },
+      headers: { 'Content-Type': 'application/soap+xml; charset=utf-8; action="ITS/Add5"' },
       body: soapBody,
     });
     const xmlText = await resp.text();

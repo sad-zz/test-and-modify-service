@@ -238,6 +238,36 @@
       margin-top: 4px;
     }
 
+    /* ── CFL diagnostic card ──────────────────────────────────────── */
+    #cflNoticeCard { border-top: 4px solid #e67e22; }
+    .notice-box {
+      background: #fef9e7;
+      border: 1px solid #f9e79f;
+      border-right: 4px solid #e67e22;
+      border-radius: 6px;
+      padding: 12px 16px;
+      font-size: 12px;
+      line-height: 1.9;
+      margin-bottom: 10px;
+    }
+    .notice-box code { background: #fff; padding: 1px 4px; border-radius: 3px; font-family: monospace; border: 1px solid #ddd; }
+    .fix-box {
+      background: #eafaf1;
+      border: 1px solid #82e0aa;
+      border-right: 4px solid #1e8449;
+      border-radius: 6px;
+      padding: 12px 16px;
+      font-size: 12px;
+      line-height: 1.9;
+      margin-top: 8px;
+    }
+    .fix-box code { background: #fff; padding: 1px 4px; border-radius: 3px; font-family: monospace; border: 1px solid #ccc; }
+    .cfl-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+    .cfl-table th, .cfl-table td { border: 1px solid #ddd; padding: 5px 10px; text-align: right; }
+    .cfl-table th { background: #fef9e7; color: #856404; }
+
+    .btn-soap11 { background: #d5f5e3; color: #1e8449; border: 1px solid #82e0aa; }
+
     /* ── Login Test card ────────────────────────────────────────────── */
     #loginCard { border-top: 3px solid #1a5276; }
 
@@ -315,6 +345,41 @@
     http://otf.rmto.ir/Companies/Companies.asmx?op=Add5
   </a>
 </p>
+
+<!-- ===== CFL ERROR DIAGNOSTIC CARD ===== -->
+<div class="card" id="cflNoticeCard">
+  <h2>⚠️ رفع خطا: پیام پشتیبانی RMTO — «خطا در CFL / زمان سرور برنمی‌گردد»</h2>
+  <div class="notice-box">
+    <strong>📩 پیام دریافت‌شده از پشتیبانی RMTO:</strong><br/>
+    «مشکل از نوع متغیر و داده‌های ارسالیتون هست. که خطا در <code>CFL</code> می‌گیرید. و زمان سرور رو بهتون بر نمی‌گردونه.»
+  </div>
+
+  <div class="fix-box">
+    <strong>✅ علت شناسایی‌شده و راه‌حل اعمال‌شده:</strong><br/>
+    ۱. <strong>هدر <code>action</code> در SOAP 1.2</strong> — در WSDL مشخص شده که عملیات <code>Add5</code> باید با
+    <code>soapAction="ITS/Add5"</code> فراخوانی شود. برای SOAP 1.2 این مقدار باید در هدر
+    <code>Content-Type</code> گنجانده شود:<br/>
+    &nbsp;&nbsp;&nbsp;<code>Content-Type: application/soap+xml; charset=utf-8; action="ITS/Add5"</code><br/>
+    بدون این مقدار، سرور متد را اشتباه تشخیص می‌دهد و <code>CFL</code> خطا برمی‌گردد.<br/><br/>
+    ۲. <strong>گزینه SOAP 1.1</strong> — نرم‌افزار C# اصلی از
+    <code>BasicHttpBinding</code> (SOAP 1.1) استفاده می‌کند که نیاز به هدر جداگانه
+    <code>SOAPAction: "ITS/Add5"</code> دارد. دستور curl برای این روش در فرم پایین قابل کپی است.
+  </div>
+
+  <h3 style="margin-top:14px;font-size:13px;color:#856404;">معنی مقادیر فیلد <code>CFL</code> در پاسخ:</h3>
+  <table class="cfl-table">
+    <thead><tr><th>مقدار CFL</th><th>معنی</th><th>عملکرد برنامه C#</th></tr></thead>
+    <tbody>
+      <tr><td><strong>0</strong></td><td>بدون تناقض — ثبت موفق</td><td>RMTO_ID = ID برگشتی (مثبت)</td></tr>
+      <tr><td><strong>100</strong></td><td>داده تکراری — قبلاً ثبت شده</td><td>به عنوان موفق تلقی می‌شود</td></tr>
+      <tr><td>هر مقدار دیگر</td><td>خطا در نوع داده یا مقادیر ارسالی</td><td>RMTO_ID = 6735 (کد خطای داخلی)</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:11px;color:#666;margin-top:8px;line-height:1.7;">
+    اگر <code>SRVDT</code> برنگردد یا مقدار آن قبل از ۲۰۱۰ باشد، یعنی رکورد در پایگاه داده سرور ذخیره نشده است.
+    رفع خطا: هدر Content-Type را با <code>action="ITS/Add5"</code> تنظیم کنید یا از روش SOAP 1.1 استفاده کنید.
+  </p>
+</div>
 
 <!-- ===== LOGIN TEST CARD ===== -->
 <div class="card" id="loginCard">
@@ -548,15 +613,18 @@
 
   <!-- Buttons -->
   <div class="btn-row">
-    <button type="button" id="btnSendSoap">📤 ارسال با SOAP (Add5)</button>
+    <button type="button" id="btnSendSoap">📤 ارسال با SOAP 1.2 (Add5)</button>
     <button type="button" id="btnSendGet">🌐 ارسال با HTTP GET (Add5PG)</button>
-    <button type="button" id="btnShowSoap">🔍 نمایش بسته SOAP</button>
+    <button type="button" id="btnShowSoap">🔍 پیش‌نمایش SOAP 1.2</button>
+    <button type="button" id="btnShowSoap11" class="btn-soap11">📋 کپی curl SOAP 1.1</button>
     <button type="button" id="btnReset">↩ بازنشانی فرم</button>
   </div>
   <p class="method-note">
-    <strong>SOAP (Add5):</strong> از پروتکل SOAP 1.2 استفاده می‌کند — آدرس سرویس:
-    <code>http://otf.rmto.ir/Companies/Companies.asmx</code>
-    <br/>
+    <strong>SOAP 1.2 (Add5):</strong> از پروتکل SOAP 1.2 با هدر
+    <code>Content-Type: application/soap+xml; charset=utf-8; action="ITS/Add5"</code> استفاده می‌کند.<br/>
+    <strong>SOAP 1.1 (curl):</strong> روشی که نرم‌افزار C# اصلی از آن استفاده می‌کند — هدر
+    <code>SOAPAction: "ITS/Add5"</code> و <code>Content-Type: text/xml</code>.
+    دکمه «کپی curl SOAP 1.1» دستور را در کلیپ‌بورد می‌گذارد.<br/>
     <strong>HTTP GET (Add5PG):</strong> داده را به صورت پارامتر URL ارسال می‌کند؛
     مقدار <code>null</code> با <code>-1</code> جایگزین می‌شود.
   </p>
@@ -641,7 +709,16 @@
     // Escape single quotes for shell
     const escaped = soapBody.replace(/'/g, "'\\''");
     return `curl -X POST "${SERVICE_URL}" \\
-  -H "Content-Type: application/soap+xml; charset=utf-8" \\
+  -H "Content-Type: application/soap+xml; charset=utf-8; action=\\"ITS/Add5\\"" \\
+  -d '${escaped}'`;
+  }
+
+  /** Build curl command using SOAP 1.1 envelope — uses SOAPAction header (no CORS issue with curl) */
+  function buildCurlSoap11(soapBody11) {
+    const escaped = soapBody11.replace(/'/g, "'\\''");
+    return `curl -X POST "${SERVICE_URL}" \\
+  -H "Content-Type: text/xml; charset=utf-8" \\
+  -H "SOAPAction: \\"ITS/Add5\\"" \\
   -d '${escaped}'`;
   }
 
@@ -700,7 +777,7 @@
   }
 
   /* ------------------------------------------------------------------ */
-  /* Build SOAP envelope                                                  */
+  /* Build SOAP 1.2 envelope                                             */
   /* ------------------------------------------------------------------ */
   function buildSoap(f) {
     return `<?xml version="1.0" encoding="utf-8"?>
@@ -739,6 +816,49 @@
     </Add5>
   </soap12:Body>
 </soap12:Envelope>`;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Build SOAP 1.1 envelope (used by the original C# app / curl only)  */
+  /* Header required: SOAPAction: "ITS/Add5"                            */
+  /* ------------------------------------------------------------------ */
+  function buildSoap11(f) {
+    return `<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+  xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Body>
+    <Add5 xmlns="ITS">
+      ${soapEl('CID',  f.CID)}
+      ${soapEl('UID',  f.UID)}
+      ${soapEl('PWD',  f.PWD)}
+      ${soapEl('FID',  f.FID)}
+      ${soapEl('RID',  f.RID)}
+      ${soapEl('ST',   f.ST)}
+      ${soapEl('ET',   f.ET)}
+      ${soapEl('C1',   f.C1)}
+      ${soapEl('C2',   f.C2)}
+      ${soapEl('C3',   f.C3)}
+      ${soapEl('C4',   f.C4)}
+      ${soapEl('C5',   f.C5)}
+      ${soapEl('ASP',  f.ASP)}
+      ${soapEl('S1',   f.S1)}
+      ${soapEl('S2',   f.S2)}
+      ${soapEl('S3',   f.S3)}
+      ${soapEl('S4',   f.S4)}
+      ${soapEl('S5',   f.S5)}
+      ${soapEl('SSO',  f.SSO)}
+      ${soapEl('SO1',  f.SO1)}
+      ${soapEl('SO2',  f.SO2)}
+      ${soapEl('SO3',  f.SO3)}
+      ${soapEl('SO4',  f.SO4)}
+      ${soapEl('SO5',  f.SO5)}
+      ${soapEl('OO',   f.OO)}
+      ${soapEl('ESD',  f.ESD)}
+    </Add5>
+  </soap:Body>
+</soap:Envelope>`;
   }
 
   /* ------------------------------------------------------------------ */
@@ -790,6 +910,13 @@
     { key: 'ERR',   label: 'وجود خطا (Error)' },
   ];
 
+  /** Return a human-readable CFL interpretation */
+  function cflNote(val) {
+    if (val === '0') return ' ✅ (بدون تناقض)';
+    if (val === '100') return ' ⚠️ (رکورد تکراری — قبلاً ثبت شده)';
+    return ' ❌ (خطا در نوع متغیر یا مقادیر ارسالی — رکورد ذخیره نشد)';
+  }
+
   /* ------------------------------------------------------------------ */
   /* Parse XML response and populate table                               */
   /* ------------------------------------------------------------------ */
@@ -824,13 +951,32 @@
         tbody.innerHTML = '';
         RESP_FIELDS.forEach(({ key, label }) => {
           const el = result.querySelector(key);
-          const value = el
+          const rawVal = el
             ? (el.getAttribute('xsi:nil') === 'true' ? '(null)' : el.textContent)
             : '—';
+          const displayVal = key === 'CFL' ? escXml(rawVal) + cflNote(rawVal) : escXml(rawVal);
+          // Highlight CFL row if it has an error
+          const rowStyle = (key === 'CFL' && rawVal !== '0' && rawVal !== '—') ? ' style="background:#fff3cd;"' : '';
           const tr = document.createElement('tr');
-          tr.innerHTML = `<td><strong>${escXml(key)}</strong></td><td>${escXml(label)}</td><td dir="ltr">${escXml(value)}</td>`;
+          tr.innerHTML = `<td${rowStyle}><strong>${escXml(key)}</strong></td><td${rowStyle}>${escXml(label)}</td><td dir="ltr"${rowStyle}>${displayVal}</td>`;
           tbody.appendChild(tr);
         });
+
+        // Update status line with semantic info about the response
+        const idEl = result.querySelector('ID');
+        const cflEl = result.querySelector('CFL');
+        const srvEl = result.querySelector('SRVDT');
+        if (idEl && cflEl) {
+          const idVal = idEl.textContent.trim();
+          const cflVal = cflEl.textContent.trim();
+          const srvVal = srvEl ? srvEl.textContent.trim() : '';
+          const idOk = parseInt(idVal, 10) > 0 || cflVal === '100';
+          statusLine.innerHTML =
+            `<span class="status-badge ${idOk ? 'badge-ok' : 'badge-err'}">${idOk ? '✅ ثبت موفق' : '❌ ثبت ناموفق — CFL=' + escXml(cflVal)}</span>` +
+            `HTTP ${httpStatus}` +
+            (srvVal ? ` — سرور: <strong>${escXml(srvVal)}</strong>` : ' — <em>SRVDT دریافت نشد</em>');
+        }
+
         document.getElementById('respTableWrap').style.display = '';
       }
     } catch (_) { /* silently ignore parse errors */ }
@@ -895,7 +1041,7 @@
       const resp = await fetch(SERVICE_URL, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/soap+xml; charset=utf-8',
+          'Content-Type': 'application/soap+xml; charset=utf-8; action="ITS/Add5"',
         },
         body: soapBody,
       });
@@ -948,6 +1094,27 @@
     const curlBox = document.getElementById('curlBox');
     curlBox.textContent = buildCurlCommand(soapBody);
     curlBox.style.display = '';
+  });
+
+  /* ------------------------------------------------------------------ */
+  /* SOAP 1.1 curl copy — recommended method matching original C# app    */
+  /* ------------------------------------------------------------------ */
+  document.getElementById('btnShowSoap11').addEventListener('click', () => {
+    const f = readFields();
+    const soap11Body = buildSoap11(f);
+    const curlCmd = buildCurlSoap11(soap11Body);
+    copyText(curlCmd);
+    // Show preview in the soap preview card too
+    document.getElementById('soapCard').style.display = '';
+    document.getElementById('soapPreview').textContent = soap11Body;
+    const curlBox = document.getElementById('curlBox');
+    curlBox.textContent = curlCmd;
+    curlBox.style.display = '';
+    // Visual feedback on the button
+    const btn = document.getElementById('btnShowSoap11');
+    const origText = btn.textContent;
+    btn.textContent = '✔ کپی شد!';
+    setTimeout(() => { btn.textContent = origText; }, 2000);
   });
 
   /* ------------------------------------------------------------------ */
@@ -1051,7 +1218,7 @@
     try {
       const resp = await fetch(SERVICE_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/soap+xml; charset=utf-8' },
+        headers: { 'Content-Type': 'application/soap+xml; charset=utf-8; action="ITS/Add5"' },
         body: soapBody,
       });
       const xmlText = await resp.text();
