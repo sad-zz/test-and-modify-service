@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>تست ارسال اطلاعات شمارنده‌های ترافیکی - متد Add5</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Tahoma, Arial, sans-serif;
+      font-size: 13px;
+      background: #f0f2f5;
+      color: #333;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #1a5276;
+      margin-bottom: 6px;
+      font-size: 18px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #555;
+      margin-bottom: 20px;
+      font-size: 12px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 18px 22px;
+      margin-bottom: 18px;
+    }
+
+    .card h2 {
+      font-size: 14px;
+      color: #1a5276;
+      border-bottom: 2px solid #1a5276;
+      padding-bottom: 6px;
+      margin-bottom: 14px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 10px 16px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-group label {
+      font-size: 11px;
+      color: #555;
+      margin-bottom: 3px;
+    }
+
+    .form-group label span.latin {
+      font-family: monospace;
+      color: #1a5276;
+      font-weight: bold;
+    }
+
+    .form-group input {
+      padding: 5px 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 12px;
+      direction: ltr;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: #1a5276;
+    }
+
+    .form-group input.nullable {
+      background: #f9f9f9;
+    }
+
+    .hint {
+      font-size: 10px;
+      color: #888;
+      margin-top: 2px;
+    }
+
+    .section-label {
+      grid-column: 1 / -1;
+      font-size: 12px;
+      font-weight: bold;
+      color: #555;
+      background: #ecf0f1;
+      padding: 4px 8px;
+      border-radius: 4px;
+      margin-top: 4px;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    button {
+      padding: 8px 20px;
+      border: none;
+      border-radius: 5px;
+      font-family: Tahoma, Arial, sans-serif;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    #btnSendSoap {
+      background: #1a5276;
+      color: #fff;
+    }
+    #btnSendSoap:hover { background: #154360; }
+
+    #btnSendGet {
+      background: #1e8449;
+      color: #fff;
+    }
+    #btnSendGet:hover { background: #196f3d; }
+
+    #btnReset {
+      background: #aaa;
+      color: #fff;
+    }
+    #btnReset:hover { background: #888; }
+
+    #btnShowSoap {
+      background: #7d3c98;
+      color: #fff;
+    }
+    #btnShowSoap:hover { background: #6c3483; }
+
+    .method-note {
+      font-size: 11px;
+      color: #888;
+      margin-top: 4px;
+    }
+
+    #soapPreview, #responseBox {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      font-family: monospace;
+      font-size: 12px;
+      padding: 14px;
+      border-radius: 6px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      direction: ltr;
+      min-height: 80px;
+      max-height: 320px;
+      overflow-y: auto;
+      margin-top: 10px;
+    }
+
+    #responseBox { display: none; }
+
+    .status-badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: bold;
+      margin-right: 8px;
+    }
+    .badge-ok  { background: #d5f5e3; color: #1e8449; }
+    .badge-err { background: #fadbd8; color: #c0392b; }
+    .badge-wait { background: #fef9e7; color: #b7950b; }
+
+    #statusLine { margin-bottom: 6px; min-height: 22px; }
+
+    .resp-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin-top: 10px;
+    }
+    .resp-table th, .resp-table td {
+      border: 1px solid #ddd;
+      padding: 5px 10px;
+      text-align: right;
+    }
+    .resp-table th { background: #eaf2ff; color: #1a5276; }
+    .resp-table tr:nth-child(even) { background: #f9f9f9; }
+
+    #respTableWrap { display: none; }
+
+    a.service-link {
+      color: #1a5276;
+      font-size: 11px;
+      direction: ltr;
+      display: inline-block;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>تست ارسال اطلاعات ترددشمار — متد <span style="font-family:monospace">Add5</span></h1>
+<p class="subtitle">
+  راهنما بر اساس مستند «ارسال اطلاعات شمارنده‌های ترددشمار به تفکیک ۵ کلاس سرعت و تخلف» — نسخه ۱.۰۱
+  <br/>
+  <a class="service-link" href="http://otf.rmto.ir/Companies/Companies.asmx?op=Add5" target="_blank">
+    http://otf.rmto.ir/Companies/Companies.asmx?op=Add5
+  </a>
+</p>
+
+<!-- ===== FORM ===== -->
+<form id="add5Form" autocomplete="off">
+
+  <div class="card">
+    <h2>اطلاعات احراز هویت و شناسه‌ها</h2>
+    <div class="form-grid">
+
+      <div class="form-group">
+        <label><span class="latin">CID</span> — شناسه شرکت (Company ID)</label>
+        <input type="number" id="CID" min="0" max="65535" value="80" required />
+      </div>
+
+      <div class="form-group">
+        <label><span class="latin">UID</span> — نام کاربری (User ID)</label>
+        <input type="text" id="UID" value="USERNAME" required />
+      </div>
+
+      <div class="form-group">
+        <label><span class="latin">PWD</span> — رمز عبور (Password)</label>
+        <input type="password" id="PWD" value="PASSWORD" required />
+      </div>
+
+      <div class="form-group">
+        <label><span class="latin">FID</span> — شناسه رکورد ارسالی (First ID)</label>
+        <input type="number" id="FID" min="0" value="0" required />
+      </div>
+
+      <div class="form-group">
+        <label><span class="latin">RID</span> — شناسه محور (Road ID)</label>
+        <input type="number" id="RID" min="0" value="102030" required />
+      </div>
+
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>بازه زمانی</h2>
+    <div class="form-grid">
+
+      <div class="form-group">
+        <label><span class="latin">ST</span> — تاریخ و زمان شروع (Start DateTime)</label>
+        <input type="datetime-local" id="ST" value="2009-02-24T12:45" required />
+      </div>
+
+      <div class="form-group">
+        <label><span class="latin">ET</span> — تاریخ و زمان پایان (End DateTime)</label>
+        <input type="datetime-local" id="ET" value="2009-02-24T13:00" required />
+      </div>
+
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>تعداد تردد به تفکیک کلاس (C1–C5)</h2>
+    <div class="form-grid">
+
+      <div class="form-group">
+        <label><span class="latin">C1</span> — سواری و وانت (Class 1 Flow)</label>
+        <input type="number" id="C1" min="0" max="65535" value="500" class="nullable" />
+        <span class="hint">اختیاری — خالی بگذارید تا null ارسال شود</span>
+      </div>
+
+      <div class="form-group">
+        <label><span class="latin">C2</span> — کامیونت و مینی‌بوس (Class 2 Flow)</label>
+        <input type="number" id="C2" min="0" max="65535" value="50" class="nullable" />
+        <span class="hint">اختیاری</span>
+      </div>
+
+      <div class="form-group">
+        <label><span class="latin">C3</span> — کامیون دو محور (Class 3 Flow)</label>
+        <input type="number" id="C3" min="0" max="65535" value="0" class="nullable" />
+        <span class="hint">اختیاری</span>
+      </div>
+
+      <div class="form-group">
+        <label><span class="latin">C4</span> — اتوبوس (Class 4 Flow)</label>
+        <input type="number" id="C4" min="0" max="65535" value="10" class="nullable" />
+        <span class="hint">اختیاری</span>
+      </div>
+
+      <div class="form-group">
+        <label><span class="latin">C5</span> — کامیون سه محور به بالا (Class 5 Flow)</label>
+        <input type="number" id="C5" min="0" max="65535" value="5" class="nullable" />
+        <span class="hint">اختیاری</span>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>سرعت متوسط (ASP، S1–S5)</h2>
+    <div class="form-grid">
+
+      <div class="form-group">
+        <label><span class="latin">ASP</span> — سرعت متوسط کل (Average Speed)</label>
+        <input type="number" id="ASP" min="0" max="65535" value="78" class="nullable" />
+        <span class="hint">اختیاری</span>
+      </div>
+
+      <div class="form-group">
+        <label><span class="latin">S1</span> — سرعت متوسط سواری و وانت</label>
+        <input type="number" id="S1" min="0" max="65535" value="80" class="nullable" />
+        <span class="hint">اختیاری</span>
+      </div>
+
+      <div class="form-group">
+        <label><span class="latin">S2</span> — سرعت متوسط کامیونت و مینی‌بوس</label>
+        <input type="number" id="S2" min="0" max="65535" value="70" class="nullable" />
+        <span class="hint">اختیاری</span>
+      </div>
+
+      <div class="form-group">
+        <label><span class="latin">S3</span> — سرعت متوسط کامیون دو محور</label>
+        <input type="number" id="S3" min="0" max="65535" value="0" class="nullable" />
+        <span class="hint">اختیاری</span>
+      </div>
+
+      <div class="form-group">
+        <label><span class="latin">S4</span> — سرعت متوسط اتوبوس</label>
+        <input type="number" id="S4" min="0" max="65535" value="50" class="nullable" />
+        <span class="hint">اختیاری</span>
+      </div>
+
+      <div class="form-group">
+        <label><span class="latin">S5</span> — سرعت متوسط کامیون سه محور به بالا</label>
+        <input type="number" id="S5" min="0" max="65535" value="40" class="nullable" />
+        <span class="hint">اختیاری</span>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>تخلف سرعت (SSO، SO1–SO5)</h2>
+    <div class="form-grid">
+
+      <div class="form-group">
+        <label><span class="latin">SSO</span> — تعداد کل تخلف سرعت غیرمجاز (Sum Speeding Offence)</label>
+        <input type="number" id="SSO" min="0" max="65535" value="50" class="nullable" />
+        <span class="hint">اختیاری</span>
+      </div>
+
+      <div class="form-group">
+        <label><span class="latin">SO1</span> — تخلف سرعت سواری و وانت</label>
+        <input type="number" id="SO1" min="0" max="65535" value="25" class="nullable" />
+        <span class="hint">اختیاری</span>
+      </div>
+
+      <div class="form-group">
+        <label><span class="latin">SO2</span> — تخلف سرعت کامیونت و مینی‌بوس</label>
+        <input type="number" id="SO2" min="0" max="65535" value="13" class="nullable" />
+        <span class="hint">اختیاری</span>
+      </div>
+
+      <div class="form-group">
+        <label><span class="latin">SO3</span> — تخلف سرعت کامیون دو محور</label>
+        <input type="number" id="SO3" min="0" max="65535" value="7" class="nullable" />
+        <span class="hint">اختیاری</span>
+      </div>
+
+      <div class="form-group">
+        <label><span class="latin">SO4</span> — تخلف سرعت اتوبوس</label>
+        <input type="number" id="SO4" min="0" max="65535" value="5" class="nullable" />
+        <span class="hint">اختیاری</span>
+      </div>
+
+      <div class="form-group">
+        <label><span class="latin">SO5</span> — تخلف سرعت کامیون سه محور به بالا</label>
+        <input type="number" id="SO5" min="0" max="65535" value="" class="nullable" />
+        <span class="hint">اختیاری — خالی = null (مطابق مثال PDF)</span>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>سایر تخلفات</h2>
+    <div class="form-grid">
+
+      <div class="form-group">
+        <label><span class="latin">OO</span> — تعداد سبقت غیرمجاز (Overtaking Offence)</label>
+        <input type="number" id="OO" min="0" max="65535" value="7" class="nullable" />
+        <span class="hint">اختیاری</span>
+      </div>
+
+      <div class="form-group">
+        <label><span class="latin">ESD</span> — تعداد فاصله غیرمجاز (Exceeding Safe Distance)</label>
+        <input type="number" id="ESD" min="0" max="65535" value="7" class="nullable" />
+        <span class="hint">اختیاری</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Buttons -->
+  <div class="btn-row">
+    <button type="button" id="btnSendSoap">📤 ارسال با SOAP (Add5)</button>
+    <button type="button" id="btnSendGet">🌐 ارسال با HTTP GET (Add5PG)</button>
+    <button type="button" id="btnShowSoap">🔍 نمایش بسته SOAP</button>
+    <button type="button" id="btnReset">↩ بازنشانی فرم</button>
+  </div>
+  <p class="method-note">
+    <strong>SOAP (Add5):</strong> از پروتکل SOAP 1.2 استفاده می‌کند — آدرس سرویس:
+    <code>http://otf.rmto.ir/Companies/Companies.asmx</code>
+    <br/>
+    <strong>HTTP GET (Add5PG):</strong> داده را به صورت پارامتر URL ارسال می‌کند؛
+    مقدار <code>null</code> با <code>-1</code> جایگزین می‌شود.
+  </p>
+
+</form>
+
+<!-- ===== SOAP Preview ===== -->
+<div class="card" id="soapCard" style="display:none;">
+  <h2>بسته SOAP ارسالی (پیش‌نمایش)</h2>
+  <pre id="soapPreview"></pre>
+</div>
+
+<!-- ===== Response ===== -->
+<div class="card" id="respCard" style="display:none;">
+  <h2>پاسخ سرویس</h2>
+  <div id="statusLine"></div>
+  <div id="respTableWrap">
+    <table class="resp-table">
+      <thead>
+        <tr>
+          <th>فیلد</th>
+          <th>نام کامل</th>
+          <th>مقدار</th>
+        </tr>
+      </thead>
+      <tbody id="respTbody"></tbody>
+    </table>
+  </div>
+  <pre id="responseBox"></pre>
+</div>
+
+<script>
+  /* ------------------------------------------------------------------ */
+  /* Helpers                                                              */
+  /* ------------------------------------------------------------------ */
+
+  const SERVICE_URL = 'http://otf.rmto.ir/Companies/Companies.asmx';
+
+  /** Return the string value of an input, or null if empty */
+  function val(id) {
+    const v = document.getElementById(id).value.trim();
+    return v === '' ? null : v;
+  }
+
+  /** Format a datetime-local value to ISO 8601 (SOAP) */
+  function toIso(dtLocal) {
+    if (!dtLocal) return null;
+    // datetime-local gives "YYYY-MM-DDTHH:mm" — append :00 seconds if missing
+    return dtLocal.length === 16 ? dtLocal + ':00' : dtLocal;
+  }
+
+  /** Build a single SOAP element; if value is null returns xsi:nil="true" */
+  function soapEl(tag, value) {
+    if (value === null) {
+      return `<${tag} xsi:nil="true"/>`;
+    }
+    return `<${tag}>${escXml(String(value))}</${tag}>`;
+  }
+
+  function escXml(s) {
+    return s.replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Read form values                                                     */
+  /* ------------------------------------------------------------------ */
+  function readFields() {
+    return {
+      CID:  val('CID'),
+      UID:  val('UID'),
+      PWD:  val('PWD'),
+      FID:  val('FID'),
+      RID:  val('RID'),
+      ST:   toIso(val('ST')),
+      ET:   toIso(val('ET')),
+      C1:   val('C1'),
+      C2:   val('C2'),
+      C3:   val('C3'),
+      C4:   val('C4'),
+      C5:   val('C5'),
+      ASP:  val('ASP'),
+      S1:   val('S1'),
+      S2:   val('S2'),
+      S3:   val('S3'),
+      S4:   val('S4'),
+      S5:   val('S5'),
+      SSO:  val('SSO'),
+      SO1:  val('SO1'),
+      SO2:  val('SO2'),
+      SO3:  val('SO3'),
+      SO4:  val('SO4'),
+      SO5:  val('SO5'),
+      OO:   val('OO'),
+      ESD:  val('ESD'),
+    };
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Build SOAP envelope                                                  */
+  /* ------------------------------------------------------------------ */
+  function buildSoap(f) {
+    return `<?xml version="1.0" encoding="utf-8"?>
+<soap12:Envelope
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+  xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
+  <soap12:Body>
+    <Add5 xmlns="ITS">
+      ${soapEl('CID',  f.CID)}
+      ${soapEl('UID',  f.UID)}
+      ${soapEl('PWD',  f.PWD)}
+      ${soapEl('FID',  f.FID)}
+      ${soapEl('RID',  f.RID)}
+      ${soapEl('ST',   f.ST)}
+      ${soapEl('ET',   f.ET)}
+      ${soapEl('C1',   f.C1)}
+      ${soapEl('C2',   f.C2)}
+      ${soapEl('C3',   f.C3)}
+      ${soapEl('C4',   f.C4)}
+      ${soapEl('C5',   f.C5)}
+      ${soapEl('ASP',  f.ASP)}
+      ${soapEl('S1',   f.S1)}
+      ${soapEl('S2',   f.S2)}
+      ${soapEl('S3',   f.S3)}
+      ${soapEl('S4',   f.S4)}
+      ${soapEl('S5',   f.S5)}
+      ${soapEl('SSO',  f.SSO)}
+      ${soapEl('SO1',  f.SO1)}
+      ${soapEl('SO2',  f.SO2)}
+      ${soapEl('SO3',  f.SO3)}
+      ${soapEl('SO4',  f.SO4)}
+      ${soapEl('SO5',  f.SO5)}
+      ${soapEl('OO',   f.OO)}
+      ${soapEl('ESD',  f.ESD)}
+    </Add5>
+  </soap12:Body>
+</soap12:Envelope>`;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Build GET URL for Add5PG                                            */
+  /* -1 substitutes null (as per documentation)                          */
+  /* ------------------------------------------------------------------ */
+  function buildGetUrl(f) {
+    const p = new URLSearchParams();
+    const nullable = v => (v === null ? '-1' : v);
+    p.set('CID', f.CID ?? '0');
+    p.set('UID', f.UID ?? '');
+    p.set('PWD', f.PWD ?? '');
+    p.set('FID', f.FID ?? '0');
+    p.set('RID', f.RID ?? '0');
+    p.set('ST',  f.ST  ?? '');
+    p.set('ET',  f.ET  ?? '');
+    p.set('C1',  nullable(f.C1));
+    p.set('C2',  nullable(f.C2));
+    p.set('C3',  nullable(f.C3));
+    p.set('C4',  nullable(f.C4));
+    p.set('C5',  nullable(f.C5));
+    p.set('ASP', nullable(f.ASP));
+    p.set('S1',  nullable(f.S1));
+    p.set('S2',  nullable(f.S2));
+    p.set('S3',  nullable(f.S3));
+    p.set('S4',  nullable(f.S4));
+    p.set('S5',  nullable(f.S5));
+    p.set('SSO', nullable(f.SSO));
+    p.set('SO1', nullable(f.SO1));
+    p.set('SO2', nullable(f.SO2));
+    p.set('SO3', nullable(f.SO3));
+    p.set('SO4', nullable(f.SO4));
+    p.set('SO5', nullable(f.SO5));
+    p.set('OO',  nullable(f.OO));
+    p.set('ESD', nullable(f.ESD));
+    return SERVICE_URL + '/Add5PG?' + p.toString();
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Response field metadata                                              */
+  /* ------------------------------------------------------------------ */
+  const RESP_FIELDS = [
+    { key: 'ID',    label: 'شناسه اصلی رکورد ثبت‌شده در پایگاه داده مرکز' },
+    { key: 'FID',   label: 'شناسه اولیه ارسالی' },
+    { key: 'CFL',   label: 'وجود تناقض یا اشکال در اطلاعات (Conflict)' },
+    { key: 'SRVDT', label: 'زمان ثبت رکورد روی سرور (Server DateTime)' },
+    { key: 'DLY',   label: 'میزان تأخیر (Delay Time)' },
+    { key: 'BIL',   label: 'مقیاس محاسبه کارکرد (Bill Scale)' },
+    { key: 'ERR',   label: 'وجود خطا (Error)' },
+  ];
+
+  /* ------------------------------------------------------------------ */
+  /* Parse XML response and populate table                               */
+  /* ------------------------------------------------------------------ */
+  function parseAndShowResponse(xmlText, httpStatus) {
+    document.getElementById('respCard').style.display = '';
+    const statusLine = document.getElementById('statusLine');
+
+    let badge, badgeClass;
+    if (httpStatus >= 200 && httpStatus < 300) {
+      badge = '✅ موفق'; badgeClass = 'badge-ok';
+    } else {
+      badge = '❌ خطا'; badgeClass = 'badge-err';
+    }
+    statusLine.innerHTML =
+      `<span class="status-badge ${badgeClass}">${badge}</span>HTTP ${httpStatus}`;
+
+    // Show raw XML
+    const rawBox = document.getElementById('responseBox');
+    rawBox.style.display = '';
+    rawBox.textContent = xmlText;
+
+    // Try to parse and fill table
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(xmlText, 'text/xml');
+      const result = doc.querySelector('Add5Result') ||
+                     doc.querySelector('Re') ||
+                     doc.querySelector('[localName="Add5Result"]');
+
+      if (result) {
+        const tbody = document.getElementById('respTbody');
+        tbody.innerHTML = '';
+        RESP_FIELDS.forEach(({ key, label }) => {
+          const el = result.querySelector(key);
+          const value = el
+            ? (el.getAttribute('xsi:nil') === 'true' ? '(null)' : el.textContent)
+            : '—';
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td><strong>${escXml(key)}</strong></td><td>${escXml(label)}</td><td dir="ltr">${escXml(value)}</td>`;
+          tbody.appendChild(tr);
+        });
+        document.getElementById('respTableWrap').style.display = '';
+      }
+    } catch (_) { /* silently ignore parse errors */ }
+  }
+
+  function showNetworkError(err) {
+    document.getElementById('respCard').style.display = '';
+    document.getElementById('statusLine').innerHTML =
+      `<span class="status-badge badge-err">❌ خطای شبکه</span>`;
+    const rawBox = document.getElementById('responseBox');
+    rawBox.style.display = '';
+    rawBox.textContent =
+      'خطا در ارتباط با سرویس:\n' + err.message + '\n\n' +
+      'توجه: ممکن است سرور سرویس از دسترس خارج باشد، یا مرورگر\n' +
+      'به دلیل سیاست CORS درخواست را رد کرده باشد.\n' +
+      'در صورت بروز خطای CORS، آدرس GET را که نمایش داده شده\n' +
+      'مستقیماً در مرورگر باز کنید یا از ابزار curl/Postman استفاده کنید.';
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Send SOAP                                                            */
+  /* ------------------------------------------------------------------ */
+  document.getElementById('btnSendSoap').addEventListener('click', async () => {
+    const f = readFields();
+    const soapBody = buildSoap(f);
+
+    // Show preview
+    document.getElementById('soapCard').style.display = '';
+    document.getElementById('soapPreview').textContent = soapBody;
+
+    document.getElementById('respCard').style.display = '';
+    document.getElementById('statusLine').innerHTML =
+      `<span class="status-badge badge-wait">⏳ در حال ارسال…</span>`;
+    document.getElementById('responseBox').style.display = '';
+    document.getElementById('responseBox').textContent = '';
+    document.getElementById('respTableWrap').style.display = 'none';
+
+    try {
+      const resp = await fetch(SERVICE_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/soap+xml; charset=utf-8',
+        },
+        body: soapBody,
+      });
+      const text = await resp.text();
+      parseAndShowResponse(text, resp.status);
+    } catch (err) {
+      showNetworkError(err);
+    }
+  });
+
+  /* ------------------------------------------------------------------ */
+  /* Send GET (Add5PG)                                                   */
+  /* ------------------------------------------------------------------ */
+  document.getElementById('btnSendGet').addEventListener('click', async () => {
+    const f = readFields();
+    const url = buildGetUrl(f);
+
+    document.getElementById('soapCard').style.display = '';
+    document.getElementById('soapPreview').textContent = 'GET ' + url;
+
+    document.getElementById('respCard').style.display = '';
+    document.getElementById('statusLine').innerHTML =
+      `<span class="status-badge badge-wait">⏳ در حال ارسال…</span>`;
+    document.getElementById('responseBox').style.display = '';
+    document.getElementById('responseBox').textContent = '';
+    document.getElementById('respTableWrap').style.display = 'none';
+
+    try {
+      const resp = await fetch(url);
+      const text = await resp.text();
+      parseAndShowResponse(text, resp.status);
+    } catch (err) {
+      showNetworkError(err);
+      // Also display the full URL so the user can try it in browser
+      document.getElementById('responseBox').textContent +=
+        '\n\nآدرس کامل GET:\n' + url;
+    }
+  });
+
+  /* ------------------------------------------------------------------ */
+  /* Show SOAP preview only                                               */
+  /* ------------------------------------------------------------------ */
+  document.getElementById('btnShowSoap').addEventListener('click', () => {
+    const f = readFields();
+    const soapBody = buildSoap(f);
+    document.getElementById('soapCard').style.display = '';
+    document.getElementById('soapPreview').textContent = soapBody;
+  });
+
+  /* ------------------------------------------------------------------ */
+  /* Reset form                                                           */
+  /* ------------------------------------------------------------------ */
+  document.getElementById('btnReset').addEventListener('click', () => {
+    document.getElementById('add5Form').reset();
+    document.getElementById('soapCard').style.display = 'none';
+    document.getElementById('respCard').style.display = 'none';
+    document.getElementById('respTableWrap').style.display = 'none';
+    document.getElementById('responseBox').style.display = 'none';
+  });
+</script>
+
+</body>
+</html>
