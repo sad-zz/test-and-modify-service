@@ -238,6 +238,37 @@
       margin-top: 4px;
     }
 
+    /* ── Error D diagnostic card ─────────────────────────────────────── */
+    #errDCard { border-top: 4px solid #c0392b; }
+    .errcode-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+    .errcode-table th, .errcode-table td { border: 1px solid #ddd; padding: 5px 10px; text-align: right; }
+    .errcode-table th { background: #fadbd8; color: #922b21; }
+    .errcode-table td:first-child { font-family: monospace; font-weight: bold; font-size: 13px; color: #c0392b; }
+    .valid-ex { color: #1e8449; font-family: monospace; }
+    .invalid-ex { color: #c0392b; font-family: monospace; }
+
+    /* ── Time validation warning ─────────────────────────────────────── */
+    #timeValidBox {
+      background: #fadbd8;
+      border: 1px solid #f1948a;
+      border-right: 4px solid #c0392b;
+      border-radius: 6px;
+      padding: 8px 14px;
+      font-size: 12px;
+      line-height: 1.8;
+      margin-top: 8px;
+      display: none;
+    }
+    #timeValidBox.valid {
+      background: #eafaf1;
+      border-color: #82e0aa;
+      border-right-color: #1e8449;
+      color: #1e8449;
+    }
+    .time-helper-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .btn-time { background: #eaf2ff; color: #1a5276; border: 1px solid #aed6f1; font-size: 11px; padding: 4px 10px; border-radius: 4px; cursor: pointer; }
+    .btn-time:hover { background: #d6eaf8; }
+
     /* ── CFL diagnostic card ──────────────────────────────────────── */
     #cflNoticeCard { border-top: 4px solid #e67e22; }
     .notice-box {
@@ -345,6 +376,72 @@
     http://otf.rmto.ir/Companies/Companies.asmx?op=Add5
   </a>
 </p>
+
+<!-- ===== ERROR D DIAGNOSTIC CARD ===== -->
+<div class="card" id="errDCard">
+  <h2>🕐 راهنمای خطای «D» — خطای بازه زمانی (پیام پشتیبانی RMTO)</h2>
+
+  <div class="notice-box" style="border-right-color:#c0392b;background:#fff5f5;border-color:#f1948a;">
+    <strong>📩 خلاصه پیام پشتیبانی RMTO درباره خطای D:</strong><br/>
+    مدت زمان بازه ارسالی باید دقیقاً <strong>۵، ۱۰ یا ۱۵ دقیقه</strong> باشد (قراردادهای جدید: فقط ۵ دقیقه)
+    و از <strong>رأس ساعت</strong> شروع شده باشد. ثانیه شروع و پایان باید <strong>صفر</strong> باشد.
+    بسته زمانی نباید از بازه‌های ساعت عبور کند.
+  </div>
+
+  <h3 style="font-size:13px;margin:12px 0 6px;color:#922b21;">قوانین اجباری برای ST و ET:</h3>
+  <table class="errcode-table">
+    <thead><tr><th>قانون</th><th>توضیح</th><th>مثال نادرست ❌</th><th>مثال درست ✅</th></tr></thead>
+    <tbody>
+      <tr>
+        <td style="color:#333;font-family:inherit;font-weight:normal;">مدت بازه</td>
+        <td>فقط ۵، ۱۰ یا ۱۵ دقیقه مجاز است</td>
+        <td class="invalid-ex">10:00 → 10:20 (20 دقیقه)</td>
+        <td class="valid-ex">10:00 → 10:15 (15 دقیقه)</td>
+      </tr>
+      <tr>
+        <td style="color:#333;font-family:inherit;font-weight:normal;">هم‌راستایی</td>
+        <td>شروع باید مضربی از مدت بازه از رأس ساعت باشد</td>
+        <td class="invalid-ex">10:01 → 10:06</td>
+        <td class="valid-ex">10:00 → 10:05</td>
+      </tr>
+      <tr>
+        <td style="color:#333;font-family:inherit;font-weight:normal;">ثانیه صفر</td>
+        <td>ثانیه‌های ST و ET باید 00 باشند</td>
+        <td class="invalid-ex">10:00:03 → 10:05:03</td>
+        <td class="valid-ex">10:00:00 → 10:05:00</td>
+      </tr>
+      <tr>
+        <td style="color:#333;font-family:inherit;font-weight:normal;">داخل یک ساعت</td>
+        <td>بازه نباید از مرز ساعت عبور کند</td>
+        <td class="invalid-ex">7:55 → 8:10</td>
+        <td class="valid-ex">7:50 → 8:00 و 8:00 → 8:10</td>
+      </tr>
+      <tr>
+        <td style="color:#333;font-family:inherit;font-weight:normal;">آینده نباشد</td>
+        <td>ST نباید از زمان سرور جلوتر باشد</td>
+        <td class="invalid-ex">فردا ساعت 10:00</td>
+        <td class="valid-ex">دیروز یا گذشته</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3 style="font-size:13px;margin:14px 0 6px;color:#922b21;">کدهای خطای ERR در پاسخ سرور:</h3>
+  <table class="errcode-table">
+    <thead><tr><th>کد خطا</th><th>معنی</th><th>عملکرد</th></tr></thead>
+    <tbody>
+      <tr><td>D</td><td>خطای بازه زمانی — مدت یا هم‌راستایی اشتباه / آینده</td><td>رکورد حذف می‌شود، هزینه‌ای تعلق نمی‌گیرد</td></tr>
+      <tr><td>O</td><td>تعداد تخلف/سرعت/فاصله بیش از کل وسایل نقلیه</td><td>رکورد ثبت می‌شود اما اشکال دارد</td></tr>
+      <tr><td>S</td><td>سرعت بیش از حداکثر مجاز محور</td><td>رکورد ثبت می‌شود اما اشکال دارد</td></tr>
+      <tr><td>5S</td><td>اختلاف سرعت میانگین با میانگین وزنی ۵ کلاس &gt; ۵ کم/ساعت</td><td>رکورد ثبت می‌شود اما اشکال دارد</td></tr>
+      <tr><td>F</td><td>حجم عبوری بیش از ظرفیت محور</td><td>رکورد ثبت می‌شود اما اشکال دارد</td></tr>
+      <tr><td>R</td><td>مشخصات محور ثبت نشده (RID ناشناخته)</td><td>بعد از ثبت RID، رکوردهای قبلی مجاز می‌شوند</td></tr>
+      <tr><td>OLD</td><td>داده‌های قدیمی‌تر از ۱ ماه (فقط محورهای اصلی)</td><td>برای محورهای تست: محدودیت تاریخ ندارد</td></tr>
+      <tr><td>A</td><td>دسترسی قطع شده توسط ادمین/مرکز</td><td>تماس با اداره کل استان پس از رفع مشکل</td></tr>
+      <tr><td>Exception</td><td>خطای استثنا — رکورد ذخیره نشده</td><td>یکبار دیگر ارسال کنید؛ اگر تکرار شد بسته را بفرستید</td></tr>
+      <tr><td>Conflict 1-6</td><td>تناقض در داده — شرح مشکل ارائه می‌شود</td><td>داده ثبت نمی‌شود؛ یکبار دیگر ارسال کنید</td></tr>
+    </tbody>
+  </table>
+</div>
 
 <!-- ===== CFL ERROR DIAGNOSTIC CARD ===== -->
 <div class="card" id="cflNoticeCard">
@@ -458,15 +555,23 @@
 
       <div class="form-group">
         <label><span class="latin">ST</span> — تاریخ و زمان شروع (Start DateTime)</label>
-        <input type="datetime-local" id="ST" value="2009-02-24T12:45" required />
+        <input type="datetime-local" id="ST" value="2009-02-24T13:00" step="300" required />
       </div>
 
       <div class="form-group">
         <label><span class="latin">ET</span> — تاریخ و زمان پایان (End DateTime)</label>
-        <input type="datetime-local" id="ET" value="2009-02-24T13:00" required />
+        <input type="datetime-local" id="ET" value="2009-02-24T13:05" step="300" required />
       </div>
 
     </div>
+
+    <div class="time-helper-row">
+      <button type="button" class="btn-time" id="btnTime5">⏱ تنظیم بازه ۵ دقیقه (اخیر)</button>
+      <button type="button" class="btn-time" id="btnTime10">⏱ تنظیم بازه ۱۰ دقیقه (اخیر)</button>
+      <button type="button" class="btn-time" id="btnTime15">⏱ تنظیم بازه ۱۵ دقیقه (اخیر)</button>
+    </div>
+    <div id="timeValidBox"></div>
+
   </div>
 
   <div class="card">
@@ -686,6 +791,93 @@
     // datetime-local gives "YYYY-MM-DDTHH:mm" — append :00 seconds if missing
     return dtLocal.length === 16 ? dtLocal + ':00' : dtLocal;
   }
+
+  /* ------------------------------------------------------------------ */
+  /* Time window validation (Error D rules from RMTO)                    */
+  /* Returns array of Farsi error strings; empty = valid                 */
+  /* ------------------------------------------------------------------ */
+  function validateTimeWindow(stIso, etIso) {
+    const errors = [];
+    if (!stIso || !etIso) { errors.push('ST یا ET خالی است.'); return errors; }
+
+    const st = new Date(stIso);
+    const et = new Date(etIso);
+    if (isNaN(st) || isNaN(et)) { errors.push('قالب تاریخ/زمان نادرست است.'); return errors; }
+
+    const diffMs  = et - st;
+    const diffMin = diffMs / 60000;
+
+    // 1. Duration must be 5, 10, or 15 minutes
+    if (diffMin !== 5 && diffMin !== 10 && diffMin !== 15) {
+      errors.push(`مدت بازه ${diffMin} دقیقه است — فقط ۵، ۱۰ یا ۱۵ دقیقه مجاز است.`);
+    }
+
+    // 2. Seconds of ST and ET must be 0
+    if (st.getSeconds() !== 0) errors.push(`ثانیه ST باید ۰۰ باشد (مقدار فعلی: ${st.getSeconds()}).`);
+    if (et.getSeconds() !== 0) errors.push(`ثانیه ET باید ۰۰ باشد (مقدار فعلی: ${et.getSeconds()}).`);
+
+    // 3. Alignment: ST.minute must be a multiple of diffMin (from top of hour)
+    if (diffMin === 5 || diffMin === 10 || diffMin === 15) {
+      if (st.getMinutes() % diffMin !== 0) {
+        errors.push(`شروع بازه باید مضرب ${diffMin} از رأس ساعت باشد (دقیقه ST = ${st.getMinutes()}).`);
+      }
+    }
+
+    // 4. Must not span across an hour boundary
+    if (st.getHours() !== et.getHours() && et.getMinutes() !== 0) {
+      errors.push('بازه از مرز ساعت عبور می‌کند — ST و ET باید در یک ساعت باشند (یا ET دقیقاً رأس ساعت باشد).');
+    }
+
+    // 5. ST must not be in the future (relative to now)
+    if (st > new Date()) {
+      errors.push('ST از زمان حال جلوتر است — سرور داده آینده را رد می‌کند (خطای D).');
+    }
+
+    return errors;
+  }
+
+  /** Update the inline validation indicator near the time card */
+  function updateTimeValid() {
+    const stIso = toIso(val('ST'));
+    const etIso = toIso(val('ET'));
+    const box = document.getElementById('timeValidBox');
+    if (!stIso || !etIso) { box.style.display = 'none'; return; }
+    const errs = validateTimeWindow(stIso, etIso);
+    if (errs.length === 0) {
+      box.className = 'valid';
+      box.style.display = '';
+      box.innerHTML = '✅ بازه زمانی معتبر است.';
+    } else {
+      box.className = '';
+      box.style.display = '';
+      box.innerHTML = '❌ <strong>هشدار بازه زمانی (خطای احتمالی D):</strong><br/>' +
+        errs.map(e => '• ' + escXml(e)).join('<br/>');
+    }
+  }
+
+  document.getElementById('ST').addEventListener('change', updateTimeValid);
+  document.getElementById('ET').addEventListener('change', updateTimeValid);
+
+  /* ------------------------------------------------------------------ */
+  /* Time helper buttons — snap to valid aligned window                  */
+  /* ------------------------------------------------------------------ */
+  function snapToWindow(durationMin) {
+    // Find the most recent completed window of durationMin ending now
+    const now   = new Date();
+    const etMin = Math.floor(now.getMinutes() / durationMin) * durationMin;
+    const et    = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), etMin, 0, 0);
+    const st    = new Date(et.getTime() - durationMin * 60000);
+    const pad2  = n => String(n).padStart(2, '0');
+    const fmt   = d => d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate()) +
+                       'T' + pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+    document.getElementById('ST').value = fmt(st);
+    document.getElementById('ET').value = fmt(et);
+    updateTimeValid();
+  }
+
+  document.getElementById('btnTime5').addEventListener('click',  () => snapToWindow(5));
+  document.getElementById('btnTime10').addEventListener('click', () => snapToWindow(10));
+  document.getElementById('btnTime15').addEventListener('click', () => snapToWindow(15));
 
   /** Build a single SOAP element; if value is null returns xsi:nil="true" */
   function soapEl(tag, value) {
@@ -907,7 +1099,7 @@
     { key: 'SRVDT', label: 'زمان ثبت رکورد روی سرور (Server DateTime)' },
     { key: 'DLY',   label: 'میزان تأخیر (Delay Time)' },
     { key: 'BIL',   label: 'مقیاس محاسبه کارکرد (Bill Scale)' },
-    { key: 'ERR',   label: 'وجود خطا (Error)' },
+    { key: 'ERR',   label: 'کد خطا (Error Code)' },
   ];
 
   /** Return a human-readable CFL interpretation */
@@ -915,6 +1107,31 @@
     if (val === '0') return ' ✅ (بدون تناقض)';
     if (val === '100') return ' ⚠️ (رکورد تکراری — قبلاً ثبت شده)';
     return ' ❌ (خطا در نوع متغیر یا مقادیر ارسالی — رکورد ذخیره نشد)';
+  }
+
+  /** Return a human-readable ERR code explanation */
+  const ERR_CODES = {
+    'D':         '❌ خطای بازه زمانی — مدت یا هم‌راستایی اشتباه، یا زمان آینده (رکورد حذف می‌شود)',
+    'O':         '⚠️ تعداد تخلف/سرعت/فاصله بیش از کل وسایل نقلیه',
+    'S':         '⚠️ سرعت بیش از حداکثر مجاز محور',
+    '5S':        '⚠️ اختلاف سرعت میانگین با میانگین وزنی ۵ کلاس > ۵ کیلومتر/ساعت',
+    'F':         '⚠️ حجم عبوری بیش از ظرفیت محور',
+    'R':         '⚠️ مشخصات محور ثبت نشده (RID ناشناخته)',
+    'OLD':       '⚠️ داده‌های قدیمی‌تر از ۱ ماه (فقط محورهای اصلی)',
+    'A':         '❌ دسترسی قطع شده توسط ادمین/مرکز',
+    '0':         '✅ بدون خطا',
+  };
+  function errNote(val) {
+    if (!val || val === '(null)' || val === '—') return '';
+    const trimmed = val.trim();
+    const upper   = trimmed.toUpperCase();
+    // Check exact match (original case first, then uppercase)
+    if (ERR_CODES[trimmed]) return ' — ' + ERR_CODES[trimmed];
+    if (ERR_CODES[upper])   return ' — ' + ERR_CODES[upper];
+    // Conflict/Exception patterns
+    if (/^conflict/i.test(trimmed)) return ' — ❌ تناقض در داده (Conflict) — رکورد ثبت نشد؛ یکبار دیگر ارسال کنید';
+    if (/^exception/i.test(trimmed)) return ' — ❌ خطای استثنا (Exception) — رکورد ذخیره نشد؛ دوباره ارسال کنید';
+    return '';
   }
 
   /* ------------------------------------------------------------------ */
@@ -954,9 +1171,20 @@
           const rawVal = el
             ? (el.getAttribute('xsi:nil') === 'true' ? '(null)' : el.textContent)
             : '—';
-          const displayVal = key === 'CFL' ? escXml(rawVal) + cflNote(rawVal) : escXml(rawVal);
-          // Highlight CFL row if it has an error
-          const rowStyle = (key === 'CFL' && rawVal !== '0' && rawVal !== '—') ? ' style="background:#fff3cd;"' : '';
+          let displayVal, rowStyle;
+          if (key === 'CFL') {
+            displayVal = escXml(rawVal) + cflNote(rawVal);
+            rowStyle = (rawVal !== '0' && rawVal !== '—') ? ' style="background:#fff3cd;"' : '';
+          } else if (key === 'ERR') {
+            const note = errNote(rawVal);
+            displayVal = escXml(rawVal) + escXml(note);
+            // Highlight ERR row if it contains an error code
+            const isErrPresent = rawVal && rawVal !== '(null)' && rawVal !== '—' && rawVal !== '0';
+            rowStyle = isErrPresent ? ' style="background:#fadbd8;"' : '';
+          } else {
+            displayVal = escXml(rawVal);
+            rowStyle = '';
+          }
           const tr = document.createElement('tr');
           tr.innerHTML = `<td${rowStyle}><strong>${escXml(key)}</strong></td><td${rowStyle}>${escXml(label)}</td><td dir="ltr"${rowStyle}>${displayVal}</td>`;
           tbody.appendChild(tr);
@@ -1019,6 +1247,10 @@
   /* ------------------------------------------------------------------ */
   document.getElementById('btnSendSoap').addEventListener('click', async () => {
     const f = readFields();
+
+    // Run time validation and update indicator
+    updateTimeValid();
+
     const soapBody = buildSoap(f);
     _lastSoapBody = soapBody;
 
@@ -1146,13 +1378,17 @@
 
   /** Build a minimal SOAP envelope for login/auth testing */
   function buildLoginTestSoap(cid, uid, pwd) {
-    const now = new Date();
+    const now  = new Date();
     const pad2 = n => String(n).padStart(2, '0');
-    const fmt = d =>
+    const fmt  = d =>
       d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) +
       'T' + pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':00';
-    const st = fmt(now);
-    const et = fmt(new Date(now.getTime() + 3600000));
+    // Use the most recent completed 5-minute window (aligned to top of hour)
+    const etMin = Math.floor(now.getMinutes() / 5) * 5;
+    const etAligned = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), etMin, 0, 0);
+    const stAligned = new Date(etAligned.getTime() - 300000);
+    const st = fmt(stAligned);
+    const et = fmt(etAligned);
     return `<?xml version="1.0" encoding="utf-8"?>
 <soap12:Envelope
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"

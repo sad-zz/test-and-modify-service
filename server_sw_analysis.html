@@ -261,6 +261,16 @@
     a.ext { color: #1a5276; font-family: monospace; font-size: 11px; direction: ltr; }
     ul.info-list { padding-right: 18px; line-height: 2; }
     ul.info-list li { list-style-type: disc; }
+    .time-valid-err {
+      background: #fadbd8; border: 1px solid #f1948a; border-right: 4px solid #c0392b;
+      border-radius: 5px; padding: 6px 12px; font-size: 12px; line-height: 1.8;
+      margin-top: 6px;
+    }
+    .time-valid-ok {
+      background: #eafaf1; border: 1px solid #82e0aa; border-right: 4px solid #1e8449;
+      border-radius: 5px; padding: 6px 12px; font-size: 12px; color: #1e8449;
+      margin-top: 6px;
+    }
   </style>
 </head>
 <body>
@@ -633,12 +643,14 @@ RMTO.<span class="typ">Re</span> ans = csclient.<span class="fn">EndAdd5</span>(
     </div>
     <div class="form-group">
       <label><span class="latin">ST</span> — شروع بازه</label>
-      <input type="datetime-local" id="tST" value="2024-01-15T10:00" />
+      <input type="datetime-local" id="tST" value="2024-01-15T10:00" step="300" />
     </div>
     <div class="form-group">
       <label><span class="latin">ET</span> — پایان بازه (data.interval)</label>
-      <input type="datetime-local" id="tET" value="2024-01-15T10:10" />
+      <input type="datetime-local" id="tET" value="2024-01-15T10:10" step="300" />
     </div>
+  </div>
+  <div id="tTimeValidBox" style="display:none;"></div>
     <div class="form-group">
       <label><span class="latin">C1</span> — تعداد سواری</label>
       <input type="number" id="tC1" value="45" min="0" />
@@ -731,6 +743,49 @@ function soapEl(tag, value) {
 function toIso(dtLocal) {
   if (!dtLocal) return null;
   return dtLocal.length === 16 ? dtLocal + ':00' : dtLocal;
+}
+
+/* ------------------------------------------------------------------ */
+/* Time window validation (Error D rules from RMTO)                    */
+/* Returns array of Farsi error strings; empty = valid                 */
+/* ------------------------------------------------------------------ */
+function validateTimeWindow(stIso, etIso) {
+  const errors = [];
+  if (!stIso || !etIso) { errors.push('ST یا ET خالی است.'); return errors; }
+  const st = new Date(stIso);
+  const et = new Date(etIso);
+  if (isNaN(st) || isNaN(et)) { errors.push('قالب تاریخ/زمان نادرست است.'); return errors; }
+  const diffMin = (et - st) / 60000;
+  if (diffMin !== 5 && diffMin !== 10 && diffMin !== 15)
+    errors.push(`مدت بازه ${diffMin} دقیقه است — فقط ۵، ۱۰ یا ۱۵ دقیقه مجاز است.`);
+  if (st.getSeconds() !== 0) errors.push(`ثانیه ST باید ۰۰ باشد.`);
+  if (et.getSeconds() !== 0) errors.push(`ثانیه ET باید ۰۰ باشد.`);
+  if ((diffMin === 5 || diffMin === 10 || diffMin === 15) && st.getMinutes() % diffMin !== 0)
+    errors.push(`شروع بازه باید مضرب ${diffMin} از رأس ساعت باشد (دقیقه ST = ${st.getMinutes()}).`);
+  if (st.getHours() !== et.getHours() && et.getMinutes() !== 0)
+    errors.push('بازه از مرز ساعت عبور می‌کند.');
+  if (st > new Date())
+    errors.push('ST از زمان حال جلوتر است — سرور داده آینده را رد می‌کند (خطای D).');
+  return errors;
+}
+
+function updateTestTimeValid() {
+  const stIso = toIso(v('tST'));
+  const etIso = toIso(v('tET'));
+  const box = document.getElementById('tTimeValidBox');
+  if (!box) return;
+  if (!stIso || !etIso) { box.style.display = 'none'; return; }
+  const errs = validateTimeWindow(stIso, etIso);
+  if (errs.length === 0) {
+    box.className = 'time-valid-ok';
+    box.style.display = '';
+    box.innerHTML = '✅ بازه زمانی معتبر است.';
+  } else {
+    box.className = 'time-valid-err';
+    box.style.display = '';
+    box.innerHTML = '❌ <strong>هشدار بازه زمانی (خطای D):</strong><br/>' +
+      errs.map(e => '• ' + escXml(e)).join('<br/>');
+  }
 }
 
 function v(id) {
@@ -832,6 +887,7 @@ function setInd(id, state, text) {
 /* Send Add5                                                            */
 /* ------------------------------------------------------------------ */
 document.getElementById('btnTestSend').addEventListener('click', async () => {
+  updateTestTimeValid();
   const soapBody = buildTestSoap();
 
   document.getElementById('testCurlBox').textContent = buildCurlCommand(soapBody);
@@ -931,6 +987,10 @@ document.getElementById('btnTestCopyCurl').addEventListener('click', () => {
   confirm.style.display = '';
   setTimeout(() => { confirm.style.display = 'none'; }, 2500);
 });
+
+/* Wire up time validation */
+document.getElementById('tST').addEventListener('change', updateTestTimeValid);
+document.getElementById('tET').addEventListener('change', updateTestTimeValid);
 </script>
 
 </body>
